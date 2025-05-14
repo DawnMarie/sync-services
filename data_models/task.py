@@ -1,0 +1,152 @@
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, List, Optional
+import re
+
+from data_models.timecube import Timecube
+from data_models.subtask import Subtask
+
+@dataclass
+class Task:
+    """Represents a task with properties from both Amazing Marvin (AM) and Notion."""
+
+    title: str
+    am_id: Optional[str] = None # This is _id in AM, AM ID in Notion
+    notion_id: Optional[str] = None # This is id in Notion, note in AM
+    day: Optional[Timecube] = None
+    depends_on: Optional[List[str]] = None  # Task titles
+    project: Optional[str] = None  # Project Name
+    subcategory: Optional[str] = None  # This is a Subcategory in AM, Value Goal in Notion
+    pillar: str = "Inbox" # This is a Category in AM, Pillar in Notion
+    goal: Optional[List[str]] = None  # This is a Goal in AM, Goal Outcome in Notion
+    time_estimate: Optional[int] = None  # In minutes; timeEstimate (ms) in AM, Estimated Duration in Notion
+    duration: Optional[int] = None  # In minutes; duration (ms) in AM, Tracked Time in Notion
+    planned_week: Optional[str] = None  # In AM, this is the Monday date YYYY-MM-DD; in Notion this is the page title of the related Week, "Week ##"
+    planned_month: Optional[str] = None  #In AM, this is YYYY-MM; in Notion this is the page title of the related Month, "Month 2025"
+    planned_quarter: Optional[str] = None  # In AM, this is a label combination; in Notion, this is the page title of the related Quarter, "1Q 2025"
+    subtasks: Optional[List[Subtask]] = None  #In AM, this is a clear Task -> Subtask relationship. In Notion, this is a Parent item -> Sub-item relationship
+    tags: Optional[List[str]] = None
+    last_updated: Timecube = Timecube.from_epoch(int(datetime.now().timestamp() * 1000))
+    done: bool = False
+
+    @staticmethod
+    def _convert_ms_to_minutes(milliseconds: Optional[int]) -> Optional[int]:
+        """Convert milliseconds to minutes."""
+        if milliseconds:
+            return int(int(milliseconds) / Subtask.MILLISECONDS_TO_MINUTES)
+        return None
+
+    @staticmethod
+    def count_incomplete_done(task_list: List["Task"]) -> dict:
+        """Count completed and incomplete tasks in a list."""
+        task_counts = {'done': 0, 'incomplete': 0}
+        for task in task_list:
+            if task.done is True:
+                task_counts['done'] = int(task_counts['done']) + 1
+            else:
+                task_counts['incomplete'] = int(task_counts['incomplete']) + 1
+        return task_counts
+
+    @staticmethod
+    def _parse_time_and_text(self, task_title: str, base_date: Timecube) -> tuple[Timecube, str]:
+        """
+        Extracts time from string like "5:30 pm Scheduled Task", adds it to base_date,
+        and returns tuple of (new_datetime, actual_task_title)
+        """
+        # Regular expression to match time in format "H:MM am/pm"
+        time_pattern = r'^(\d{1,2}):(\d{2})\s*(am|pm|AM|PM)'
+
+        match = re.match(time_pattern, task_title)
+        if not match:
+            return base_date, task_title
+
+        hours, minutes, meridiem = match.groups()
+        hours = int(hours)
+        minutes = int(minutes)
+
+        # Convert to 24-hour format if PM
+        if meridiem.lower() == 'pm' and hours != 12:
+            hours += 12
+        elif meridiem.lower() == 'am' and hours == 12:
+            hours = 0
+
+        # Create new Timecube with original date but new time
+        new_timecube = Timecube.from_datetime(base_date.date_in_datetime.replace(
+            hour=hours,
+            minute=minutes,
+            second=0,
+            microsecond=0
+        ))
+
+        # Get the remaining text (strip to remove extra spaces)
+        actual_task_title = task_title[match.end():].strip()
+
+        return new_timecube, actual_task_title
+
+    @classmethod
+    def from_am_json(cls, am_response: Dict[str, str]) -> "Task":
+        """Create a Task instance from Amazing Marvin JSON response."""
+        title = am_response.get("title")
+        day = None
+
+        if ("day" in am_response) & (am_response.get("day") != "unassigned"):
+            day = Timecube.from_Y_m_d(am_response.get("day"), "America/New_York")
+        day, title = cls._parse_time_and_text(cls, title, day)
+
+        time_estimate = cls._convert_ms_to_minutes(am_response.get("timeEstimate"))
+        duration = cls._convert_ms_to_minutes(am_response.get("duration"))
+
+        planned_week = None
+        if am_response.get("plannedWeek"):
+             week_timecube = Timecube.from_Y_m_d(am_response.get("plannedWeek"),"America/New_York" )
+             planned_week = "Week " + str(int(week_timecube.week_number))
+        planned_month = None
+        if am_response.get("plannedMonth"):
+             month_timecube = Timecube.from_Y_m_d(am_response.get("plannedMonth")+"-10")
+             planned_month = month_timecube.date_M_Y
+
+        last_updated = Timecube.from_epoch(int(am_response.get('updatedAt')))
+
+        return cls(
+            am_id=am_response.get("_id"),
+            title=title,
+            day=day,
+            time_estimate=time_estimate,
+            duration=duration,
+            planned_week=planned_week,
+            planned_month=planned_month,
+            last_updated=last_updated,
+            done=bool(am_response.get("done", "")),
+        )
+
+    @classmethod
+    def from_notion_json(cls, notion_response: dict) -> "Task":
+        """Create a Task instance from Notion JSON response."""
+        task_properties = notion_response["properties"]
+
+        am_id = None
+        if task_properties.get("AM ID").get("rich_text")[0].get("plain_text"):
+            am_id = task_properties.get("AM ID").get("rich_text")[0].get("plain_text")
+
+        day = None
+        if task_properties.get("Scheduled").get("date"):
+            day = Timecube.from_Y_m_d(task_properties.get("Scheduled").get("date").get("start"), "America/New_York")
+
+        time_estimate = None
+        if task_properties.get("Estimated Duration (min)").get("number"):
+            time_estimate = task_properties.get("Estimated Duration (min)").get("number")
+
+        duration = None
+        if task_properties.get("Tracked Time (min)").get("number"):
+            duration = task_properties.get("Tracked Time (min)").get("number")
+
+        return cls(
+            am_id=am_id,
+            notion_id=notion_response["id"],
+            title=task_properties.get("Task").get("title")[0].get("plain_text"),
+            day=day,
+            time_estimate=time_estimate,
+            duration=duration,
+            done=bool(task_properties["Done"]["checkbox"]),
+            last_updated=Timecube.from_date_time_string(notion_response.get("last_edited_time"))
+        )
