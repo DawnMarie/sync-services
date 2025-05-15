@@ -13,7 +13,7 @@ class Subtask:
     notion_id: Optional[str] = None
     title: str = ""
     done: bool = False
-    time_estimate: Optional[int] = None  # in milliseconds
+    time_estimate: Optional[int] = None  # in minutes
 
     @staticmethod
     def _convert_ms_to_minutes(milliseconds: Optional[int]) -> Optional[int]:

@@ -18,6 +18,26 @@ class Sleep:
     awake_time: float  # in hours
     resting_hr: int
 
+    def format_hours_to_hm(cls, hours: float) -> str:
+        """
+        Convert hours (float) to a string formatted as "Xh YYYm"
+
+        Args:
+            hours: Float value representing hours
+
+        Returns:
+            String formatted as "Xh YYYm"
+        """
+        # Calculate total minutes
+        total_minutes = round(hours * 60)
+
+        # Calculate hours and remaining minutes
+        h = total_minutes // 60
+        m = total_minutes % 60
+
+        # Format as "Xh YYYm"
+        return f"{h}h {m}m"
+
     @classmethod
     def from_garmin_json(cls, garmin_response: dict) -> "Sleep":
 

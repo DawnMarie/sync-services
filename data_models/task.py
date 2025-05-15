@@ -132,6 +132,46 @@ class Task:
         if task_properties.get("Scheduled").get("date"):
             day = Timecube.from_Y_m_d(task_properties.get("Scheduled").get("date").get("start"), "America/New_York")
 
+        depends_on = []
+        if task_properties.get("Depends On").get("relation"):
+            for item in task_properties.get("Depends On").get("relation"):
+                depends_on.append(item.get("title"))
+
+        project = None
+        if task_properties.get("Projects").get("relation"):
+            for item in task_properties.get("Projects").get("relation"):
+                project = item.get("title")
+
+        subcategory = None
+        if task_properties.get("Value Goals").get("relation"):
+            for item in task_properties.get("Value Goals").get("relation"):
+                subcategory = item.get("title")
+
+        pillar = None
+        if task_properties.get("Pillars").get("relation"):
+            for item in task_properties.get("Pillars").get("relation"):
+                pillar = item.get("title")
+
+        goal = None
+        if task_properties.get("Goal Outcome").get("relation"):
+                for item in task_properties.get("Goal Outcome").get("relation"):
+                    goal = item.get("title")
+
+        planned_week = None
+        if task_properties.get("Planned Week").get("relation"):
+            for item in task_properties.get("Planned Week").get("relation"):
+                planned_week = item.get("title")
+
+        planned_month = None
+        if task_properties.get("Planned Month").get("relation"):
+            for item in task_properties.get("Planned Month").get("relation"):
+                planned_month = item.get("title")
+
+        planned_quarter = None
+        if task_properties.get("Planned Quarter").get("relation"):
+            for item in task_properties.get("Planned Quarter").get("relation"):
+                planned_quarter = item.get("title")
+
         time_estimate = None
         if task_properties.get("Estimated Duration (min)").get("number"):
             time_estimate = task_properties.get("Estimated Duration (min)").get("number")
@@ -143,10 +183,18 @@ class Task:
         return cls(
             am_id=am_id,
             notion_id=notion_response["id"],
-            title=task_properties.get("Task").get("title")[0].get("plain_text"),
             day=day,
+            depends_on=depends_on,
+            project=project,
+            subcategory=subcategory,
+            pillar=pillar,
+            goal=goal,
+            title=task_properties.get("Task").get("title")[0].get("plain_text"),
             time_estimate=time_estimate,
             duration=duration,
+            planned_week=planned_week,
+            planned_month=planned_month,
+            planned_quarter=planned_quarter,
             done=bool(task_properties["Done"]["checkbox"]),
             last_updated=Timecube.from_date_time_string(notion_response.get("last_edited_time"))
         )
