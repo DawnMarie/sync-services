@@ -1,7 +1,7 @@
 name: Sync Amazing Marvin to Notion
 on:
   schedule:
-    - cron: '0 5-22 * * *' # Hourly from 5:00 to 10:00 UTC
+   ## - cron: '0 5-22 * * *' # Hourly from 5:00 to 10:00 UTC
   workflow_dispatch:
 env:
   TZ: 'America/New_York'
