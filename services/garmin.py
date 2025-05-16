@@ -33,7 +33,7 @@ class GarminService:
         sleep_dto.resting_hr = response.get('restingHeartRate')
         return sleep_dto
 
-    def get_workouts(self):
+    def get_workouts(self) -> List[Activity]:
         response = self.client.get_activities(0, 25)
         activity_dtos = []
         for activity in response:
@@ -57,7 +57,7 @@ class GarminService:
         return daily_status
 
     def get_readiness(self, day: Timecube):
-        training_readiness = self.client.get_training_readiness(day.date_Y_m_d)
+        training_readiness: List[dict] = self.client.get_training_readiness(day.date_Y_m_d)
         score = training_readiness[0].get("score")
         description = training_readiness[0].get("feedbackShort").replace("_", " ").capitalize()
         return score, description

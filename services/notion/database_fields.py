@@ -15,14 +15,14 @@ class NotionDatabaseFields(NotionBasic):
     def _get_database_page_id_by_page_title(self, database_id: str, field_name: str, page_title: str) -> str:
         page_id = "No page id returned!"
         pages = self._get_database_pages_by_title(database_id, field_name, page_title)
-        if pages['results'][0]['id']:
-            page_id = pages['results'][0]['id']
+        if pages.get("results").get(0).get("id"):
+            page_id = pages.get("results").get(0).get("id")
         return page_id
 
     def _get_database_page_title_by_id(self, page_id: str, title_field: str):
         page_name = "No page returned!"
         page = self._get_page_by_id(page_id)
         if page:
-            page_name = page['properties'][title_field]['title'][0]['plain_text']
+            page_name = page.get("properties").get(title_field).get("title").get(0).get("plain_text")
         return page_name
 

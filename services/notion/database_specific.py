@@ -116,7 +116,9 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
 
         if project.day:
             properties["Review Date"] = {
-                "date": {"start": project.day.date_only_if_time_is_midnight}
+                "date": {
+                    "start": project.day.date_only_if_time_is_midnight
+                }
             }
 
         if project.subcategory:
@@ -225,10 +227,6 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
             "Estimated Duration (min)": {
                 "number": subtask.time_estimate
             }
-        }
-        page = {
-            "parent": {"database_id": self.tasks_database_id},
-            "properties": properties,
         }
         return self._post_new_database_page(self.tasks_database_id, properties)
 

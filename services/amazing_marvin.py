@@ -112,7 +112,7 @@ class AmazingMarvinService:
     Utility functions to modify or edit data, not specifically to GET or POST information to AM
     """
     def _set_pillar_value_goal_project(self, am_response: dict, dto: Task | Project) -> Task | Project:
-        #if parent is "unassigned" set Project to Inbox
+        #if the parent is "unassigned" set Project to Inbox
         if am_response.get("parentId") == "unassigned":
             dto.project = "Inbox"
 
@@ -127,10 +127,10 @@ class AmazingMarvinService:
             ##else check parent.type
             else:
                 while parent_response.get("parentId") != "root":
-                    ###if parent.type == category set Value Goal based on parent.title then climb taxonomy
+                    ###if parent.type == category set Value Goal based on parent.title, then climb taxonomy
                     if parent_response.get("type") == "category":
                         dto.subcategory = parent_response.get("title")
-                    ###if parent.type == project set Project based on parent.title then climb taxonomy
+                    ###if parent.type == project set Project based on parent.title, then climb taxonomy
                     if parent_response.get("type") == "project":
                         dto.project = parent_response.get("title")
                     parent_response = self._get_project_by_id(parent_response.get("parentId"))

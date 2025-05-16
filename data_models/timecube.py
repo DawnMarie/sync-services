@@ -1,6 +1,6 @@
 """Object to contain all the necessary time formats"""
 
-from datetime import datetime, tzinfo
+from datetime import datetime
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
@@ -60,7 +60,8 @@ class Timecube:
         if not dt.tzinfo:
             return cls._build(dt, "America/New_York")
         if isinstance(dt.tzinfo, ZoneInfo):
-            return cls._build(dt, dt.tzinfo.key)
+            ##TODO: Figure out how to get a timezone name that isn't EDT
+            return cls._build(dt, dt.tzinfo.tzname(dt))
         return cls._build(dt, "UTC")
 
     @classmethod
@@ -129,8 +130,7 @@ class Timecube:
 
     @property
     def date_only_if_time_is_midnight(self) -> str:
-        """Format date based on whether time is midnight or not"""
-        # Check if time is midnight (00:00:00)
+        """Format date based on whether the time is midnight or not"""
         is_midnight = self.date_in_datetime.hour == 0 and self.date_in_datetime.minute == 0 and self.date_in_datetime.second == 0
 
         if is_midnight:

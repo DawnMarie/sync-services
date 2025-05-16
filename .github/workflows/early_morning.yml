@@ -1,0 +1,68 @@
+name: Early Morning Sync
+on:
+  schedule:
+    - cron: '0 10 * * *' # 6:00 AM EDT (10:00 UTC)
+  workflow_dispatch:
+env:
+  TZ: 'America/New_York'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+
+      - name: Run script
+        env:
+          HABITS: ${{ secrets.HABITS }}
+          AM_API_TOKEN: ${{ secrets.AM_API_TOKEN }}
+          AM_FULL_ACCESS_TOKEN: ${{ secrets.AM_FULL_ACCESS_TOKEN }}
+          AM_SYNC_SERVER: ${{ secrets.AM_SYNC_SERVER }}
+          AM_SYNC_DATABASE: ${{ secrets.AM_SYNC_DATABASE }}
+          AM_SYNC_USER: ${{ secrets.AM_SYNC_USER }}
+          AM_SYNC_PASSWORD: ${{ secrets.AM_SYNC_PASSWORD }}
+          EXIST_TOKEN: ${{ secrets.EXIST_TOKEN }}
+          GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
+          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+          GOOGLE_CALENDARS: ${{ secrets.GOOGLE_CALENDARS }}
+          GOOGLE_OAUTH_TOKEN: ${{ secrets.GOOGLE_OAUTH_TOKEN }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_ACTIVITY_DB_ID: ${{ secrets.NOTION_ACTIVITY_DB_ID }}
+          NOTION_DAILY_TRACKING_DB_ID: ${{ secrets.NOTION_DAILY_TRACKING_DB_ID }}
+          NOTION_HABIT_DB_ID: ${{ secrets.NOTION_HABIT_DB_ID }}
+          NOTION_INSIGHT_BLOCK_ID: ${{ secrets.NOTION_INSIGHT_BLOCK_ID }}
+          NOTION_MOOD_DB_ID: ${{ secrets.NOTION_MOOD_DB_ID }}
+          NOTION_PILLAR_DB_ID: ${{ secrets.NOTION_PILLAR_DB_ID }}
+          NOTION_WEEK_DB_ID: ${{ secrets.NOTION_WEEK_DB_ID }}
+          NOTION_MONTH_DB_ID: ${{ secrets.NOTION_MONTH_DB_ID }}
+          NOTION_QUARTER_DB_ID: ${{ secrets.NOTION_QUARTER_DB_ID }}
+          NOTION_PR_DB_ID: ${{ secrets.NOTION_PR_DB_ID }}
+          NOTION_PROJECT_DB_ID: ${{ secrets.NOTION_PROJECT_DB_ID }}
+          NOTION_SLEEP_DB_ID: ${{ secrets.NOTION_SLEEP_DB_ID }}
+          NOTION_STATS_DB_ID: ${{ secrets.NOTION_STATS_DB_ID }}
+          NOTION_STEPBET_DB_ID: ${{ secrets.NOTION_STEPBET_DB_ID }}
+          NOTION_STEPS_DB_ID: ${{ secrets.NOTION_STEPS_DB_ID }}
+          NOTION_TASKS_DB_ID: ${{ secrets.NOTION_TASKS_DB_ID }}
+          NOTION_GOAL_DB_ID: ${{ secrets.NOTION_GOAL_DB_ID }}
+          NOTION_SUBCATEGORY_DB_ID: ${{ secrets.NOTION_SUBCATEGORY_DB_ID }}
+          TZ: 'America/New_York'
+        run: |
+          python pipelines/early_morning.py

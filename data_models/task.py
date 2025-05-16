@@ -48,7 +48,7 @@ class Task:
         return task_counts
 
     @staticmethod
-    def _parse_time_and_text(self, task_title: str, base_date: Timecube) -> tuple[Timecube, str]:
+    def _parse_time_and_text(task_title: str, base_date: Timecube) -> tuple[Timecube, str]:
         """
         Extracts time from string like "5:30 pm Scheduled Task", adds it to base_date,
         and returns tuple of (new_datetime, actual_task_title)
@@ -71,12 +71,14 @@ class Task:
             hours = 0
 
         # Create new Timecube with original date but new time
-        new_timecube = Timecube.from_datetime(base_date.date_in_datetime.replace(
+        updated_base_date = base_date.date_in_datetime.replace(
             hour=hours,
             minute=minutes,
             second=0,
             microsecond=0
-        ))
+        )
+        new_timecube = Timecube.from_datetime(updated_base_date)
+        new_timecube.local_tz = "America/New_York"
 
         # Get the remaining text (strip to remove extra spaces)
         actual_task_title = task_title[match.end():].strip()
@@ -91,7 +93,7 @@ class Task:
 
         if ("day" in am_response) & (am_response.get("day") != "unassigned"):
             day = Timecube.from_Y_m_d(am_response.get("day"), "America/New_York")
-        day, title = cls._parse_time_and_text(cls, title, day)
+        day, title = cls._parse_time_and_text(title, day)
 
         time_estimate = cls._convert_ms_to_minutes(am_response.get("timeEstimate"))
         duration = cls._convert_ms_to_minutes(am_response.get("duration"))

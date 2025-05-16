@@ -8,6 +8,6 @@ notion-client~=2.2.1
 protobuf~=6.30.2
 python-dotenv~=1.1.0
 pytz~=2024.1
-requests~=2.31.0
+requests~=2.32.0
 services~=0.1.1
 tzdata~=2025.2

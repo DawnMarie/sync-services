@@ -2,7 +2,6 @@ from data_models.timecube import Timecube
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Optional
 
 
 @dataclass
@@ -18,7 +17,8 @@ class Sleep:
     awake_time: float  # in hours
     resting_hr: int
 
-    def format_hours_to_hm(cls, hours: float) -> str:
+    @staticmethod
+    def format_hours_to_hm(hours: float) -> str:
         """
         Convert hours (float) to a string formatted as "Xh YYYm"
 
@@ -27,6 +27,7 @@ class Sleep:
 
         Returns:
             String formatted as "Xh YYYm"
+            :param hours:
         """
         # Calculate total minutes
         total_minutes = round(hours * 60)

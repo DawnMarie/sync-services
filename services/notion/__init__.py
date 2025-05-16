@@ -24,7 +24,7 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         today_timecube = Timecube.from_datetime(datetime.today())
         return self._get_stepbet_pages_by_start_and_end_date(self, today_timecube, today_timecube)
 
-    def get_habits_from_daily_tracking_page_by_date(self, timecube: Timecube):
+    def get_habits_from_daily_tracking_page_by_date(self, timecube: Timecube) -> dict:
         habit_object = {}
         daily_tracking_page = self._get_daily_tracking_pages_by_date(timecube)[0]
         habits = os.getenv("HABITS").split(",")
@@ -51,7 +51,7 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         return self._update_page_icon(activity_id, icon)
 
     def create_sleep_page(self, sleep: Sleep):
-        sleep_id = self._post_new_sleep(sleep)
+        sleep_id = self._post_new_sleep(sleep)["id"]
         icon = {"emoji": "😴"}
         return self._update_page_icon(sleep_id, icon)
 

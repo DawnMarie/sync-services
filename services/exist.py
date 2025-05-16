@@ -15,6 +15,12 @@ class ExistService:
         self.url = 'https://exist.io/api/2/'
         self.headers = {'Authorization': 'Bearer ' + os.getenv("EXIST_TOKEN"), 'Content-Type': 'application/json'}
 
+    def _get_attribute(self, attribute: str, day: Timecube):
+        url = f"{self.url}attributes/values/"
+        attribute_payload = {"attribute": [attribute], "date_max": day.date_Y_m_d}
+        response = requests.get(url, headers=self.headers, params=attribute_payload)
+        return response.json().get('results')
+
     def _post_attribute(self, attribute: str, attribute_date: Timecube, value: int):
         url = f"{self.url}attributes/update/"
         attribute_payload = {"name": attribute, "date": attribute_date.date_Y_m_d, "value": value}
@@ -59,9 +65,10 @@ class ExistService:
         today = Timecube.from_datetime(datetime.today())
         return self._post_attribute("witchcraft", today, value)
 
-    def post_today_readiness(self, value: int):
-        today = Timecube.from_datetime(datetime.today())
-        return self._post_attribute("readiness", today, value)
+    def post_yesterday_readiness(self, value: int):
+        yesterday_datetime = (datetime.today() - timedelta(days=1))
+        yesterday = Timecube.from_datetime(yesterday_datetime)
+        return self._post_attribute("readiness", yesterday, value)
 
     def post_yesterday_stress(self, value: int):
         yesterday_datetime = (datetime.today() - timedelta(days=1))
@@ -88,6 +95,16 @@ class ExistService:
         yesterday = Timecube.from_datetime(yesterday_datetime)
         return self._post_attribute("social", yesterday, 1)
 
+    def post_yesterday_family(self):
+        yesterday_datetime = (datetime.today() - timedelta(days=1))
+        yesterday = Timecube.from_datetime(yesterday_datetime)
+        return self._post_attribute("family", yesterday, 1)
+
+    def post_yesterday_guest(self):
+        yesterday_datetime = (datetime.today() - timedelta(days=1))
+        yesterday = Timecube.from_datetime(yesterday_datetime)
+        return self._post_attribute("guest", yesterday, 1)
+
     def post_yesterday_strength(self):
         yesterday_datetime = (datetime.today() - timedelta(days=1))
         yesterday = Timecube.from_datetime(yesterday_datetime)
@@ -108,12 +125,6 @@ class ExistService:
             insights_dto.append(insight_dto)
         return insights_dto
 
-    def _get_attribute(self, attribute: str, day: Timecube):
-        url = f"{self.url}attributes/values/"
-        attribute_payload = {"attribute": [attribute], "date_max": day.date_Y_m_d}
-        response = requests.get(url, headers=self.headers, params=attribute_payload)
-        return response.json().get('results')
-
     def get_yesterday_daily_note(self):
         yesterday = Timecube.from_datetime(datetime.today() - timedelta(days=1))
         response = self._get_attribute("mood_note", yesterday)
@@ -128,3 +139,26 @@ class ExistService:
         yesterday = Timecube.from_datetime(datetime.today() - timedelta(days=1))
         response =  self._get_attribute("mobile_screen_min", yesterday)
         return response[0].get('value')
+
+    def post_yesterdays_habits(self, habits: dict):
+        yesterday = Timecube.from_datetime(datetime.today() - timedelta(days=1))
+        for key in habits:
+            if key == "Vitamins & Supplements":
+                self._post_attribute("vitamins", yesterday, habits.get(key))
+            if key == "Prayers":
+                self._post_attribute("prayer", yesterday, habits.get(key))
+            if key == "Morning Hygiene":
+                self._post_attribute("morning_hygiene", yesterday, habits.get(key))
+            if key == "Evening Hygiene":
+                self._post_attribute("evening_hygiene", yesterday, habits.get(key))
+            if key == "Stick to Meal Plan":
+                self._post_attribute("stick_to_meal_plan", yesterday, habits.get(key))
+            if key == "Reading":
+                pages_read = 10 if habits.get(key) == 1 else 0
+                self._post_attribute("pages_read", yesterday, pages_read)
+            if key == "Wear Night Guard":
+                self._post_attribute("wear_night_guard", yesterday, habits.get(key))
+            if key == "Progress Photo":
+                self._post_attribute("progress_photo", yesterday, habits.get(key))
+            if key == "Clean Kitchen":
+                self._post_attribute("clean_kitchen", yesterday, habits.get(key))

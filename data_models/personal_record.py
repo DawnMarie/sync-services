@@ -8,7 +8,7 @@ class PR:
     activity_date: Timecube
     activity_type: str
     activity_name: str
-    type_id: str
+    type_id: int
     value: str
     pace: str
     icon: str
@@ -20,7 +20,7 @@ class PR:
         return activity_type.replace('_', ' ').title()
 
     @staticmethod
-    def _replace_activity_name_by_type_id(typeId):
+    def _replace_activity_name_by_type_id(type_id):
         type_id_name_map = {
             1: "1K",
             2: "1mi",
@@ -35,7 +35,7 @@ class PR:
             14: "Most Steps in a Month",
             15: "Longest Goal Streak"
         }
-        return type_id_name_map.get(typeId, "Unnamed Activity")
+        return type_id_name_map.get(type_id, "Unnamed Activity")
 
     @staticmethod
     def _format_garmin_value(value, type_id):
@@ -53,10 +53,10 @@ class PR:
             minutes = total_seconds // 60
             seconds = total_seconds % 60
             formatted_value = f"{minutes}:{seconds:02d}"
-            total_pseconds = total_seconds / 1.60934  # Divide by 1.60934 to get pace per km
-            pminutes = int(total_pseconds // 60)  # Convert to integer
-            pseconds = int(total_pseconds % 60)  # Convert to integer
-            formatted_pace = f"{pminutes}:{pseconds:02d} /km"
+            total_pace_seconds = total_seconds / 1.60934  # Divide by 1.60934 to get pace per km
+            pace_minutes = int(total_pace_seconds // 60)  # Convert to integer
+            pace_seconds = int(total_pace_seconds % 60)  # Convert to integer
+            formatted_pace = f"{pace_minutes}:{pace_seconds:02d} /km"
             icon = "⚡"
             return formatted_value, formatted_pace, icon
 
@@ -65,10 +65,10 @@ class PR:
             minutes = total_seconds // 60
             seconds = total_seconds % 60
             formatted_value = f"{minutes}:{seconds:02d}"
-            total_pseconds = total_seconds // 5  # Divide by 5km
-            pminutes = total_pseconds // 60
-            pseconds = total_pseconds % 60
-            formatted_pace = f"{pminutes}:{pseconds:02d} /km"
+            total_pace_seconds = total_seconds // 5  # Divide by 5km
+            pace_minutes = total_pace_seconds // 60
+            pace_seconds = total_pace_seconds % 60
+            formatted_pace = f"{pace_minutes}:{pace_seconds:02d} /km"
             icon = "👟"
             return formatted_value, formatted_pace, icon
 
@@ -82,11 +82,10 @@ class PR:
                 formatted_value = f"{hours}:{minutes:02d}:{seconds:02d}"
             else:
                 formatted_value = f"{minutes}:{seconds:02d}"
-            total_pseconds = total_seconds // 10  # Divide by 10km
-            phours = total_pseconds // 3600
-            pminutes = (total_pseconds % 3600) // 60
-            pseconds = total_pseconds % 60
-            formatted_pace = f"{pminutes}:{pseconds:02d} /km"
+            total_pace_seconds = total_seconds // 10  # Divide by 10km
+            pace_minutes = (total_pace_seconds % 3600) // 60
+            pace_seconds = total_pace_seconds % 60
+            formatted_pace = f"{pace_minutes}:{pace_seconds:02d} /km"
             icon = "⭐"
             return formatted_value, formatted_pace, icon
 
@@ -94,6 +93,7 @@ class PR:
             value_km = value / 1000
             formatted_value = f"{value_km:.2f} km"
             pace = ""  # No pace for these types
+            icon = ""
             if type_id == 7:
                 icon = "🏃"
             if type_id == 8:
@@ -118,6 +118,7 @@ class PR:
             value_steps = round(value)
             formatted_value = f"{value_steps:,}"
             pace = ""
+            icon = ""
             if type_id == 12:
                 icon = "👣"
             if type_id == 13:
@@ -134,7 +135,7 @@ class PR:
             return formatted_value, pace, icon
 
         # Default case
-        if int(value // 60) < 60:  # If total time is less than an hour
+        if int(value // 60) < 60:  # If the total time is less than an hour
             minutes = int(value // 60)
             seconds = round((value / 60 - minutes) * 60, 2)
             formatted_value = f"{minutes}:{seconds:05.2f}"

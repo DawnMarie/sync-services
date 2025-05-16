@@ -11,7 +11,7 @@ class NotionTransformer(NotionDatabaseSpecific):
         decoded_url = unquote(notion_url)
         # Get the part between the last slash and the ID
         title_with_id = decoded_url.split('/')[-1]
-        # Remove the ID portion (32 chars + hyphen)
+        # Remove the ID portion (32 chars and hyphen)
         title = title_with_id[:-33]
         # Replace remaining hyphens with spaces
         return title.replace('-', ' ')
@@ -64,7 +64,8 @@ class NotionTransformer(NotionDatabaseSpecific):
             item["title"] = self._extract_title_from_url(item_page["url"])
         return planned_quarter_json
 
-    def _convert_mood_int_to_str(self, mood_int: int):
+    @staticmethod
+    def _convert_mood_int_to_str(mood_int: int):
         mood_str = ""
         if mood_int == 9:
             mood_str = "🤩Great"
