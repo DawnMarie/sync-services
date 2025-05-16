@@ -11,6 +11,7 @@ class Task:
     """Represents a task with properties from both Amazing Marvin (AM) and Notion."""
 
     title: str
+    last_updated: Timecube
     am_id: Optional[str] = None # This is _id in AM, AM ID in Notion
     notion_id: Optional[str] = None # This is id in Notion, note in AM
     day: Optional[Timecube] = None
@@ -26,7 +27,6 @@ class Task:
     planned_quarter: Optional[str] = None  # In AM, this is a label combination; in Notion, this is the page title of the related Quarter, "1Q 2025"
     subtasks: Optional[List[Subtask]] = None  #In AM, this is a clear Task -> Subtask relationship. In Notion, this is a Parent item -> Sub-item relationship
     tags: Optional[List[str]] = None
-    last_updated: Timecube = Timecube.from_epoch(int(datetime.now().timestamp() * 1000))
     done: bool = False
 
     @staticmethod
@@ -107,7 +107,9 @@ class Task:
              month_timecube = Timecube.from_Y_m_d(am_response.get("plannedMonth")+"-10")
              planned_month = month_timecube.date_M_Y
 
-        last_updated = Timecube.from_epoch(int(am_response.get('updatedAt')))
+        last_updated = Timecube.from_datetime(datetime.now())
+        if am_response.get("updatedAt"):
+            last_updated = Timecube.from_epoch(int(am_response.get('updatedAt')))
 
         return cls(
             am_id=am_response.get("_id"),

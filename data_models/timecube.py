@@ -17,8 +17,14 @@ class Timecube:
     week_number = the number of the week containing the date in the timecube
     """
 
-    _dt_utc: datetime = datetime.now(tz=ZoneInfo("UTC"))
+    _dt_utc: datetime
     local_tz: str = "America/New_York"
+
+    def __init__(self, _dt_utc: datetime = None, local_tz: str = "America/New_York"):
+        if _dt_utc is None:
+            _dt_utc = datetime.now(tz=ZoneInfo("UTC"))
+        self._dt_utc = _dt_utc
+        self.local_tz = local_tz
 
     @classmethod
     def from_Y_m_d_H_M_S(cls, date_str: str, local_tz: str = "America/New_York"):

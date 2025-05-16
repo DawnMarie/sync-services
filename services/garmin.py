@@ -14,6 +14,7 @@ class GarminService:
 
     def __init__(self):
         garmin_email = os.getenv("GARMIN_EMAIL")
+        print("Garmin email is " + garmin_email)
         garmin_password = os.getenv("GARMIN_PASSWORD")
         self.client = Garmin(garmin_email, garmin_password)
         self.client.login()

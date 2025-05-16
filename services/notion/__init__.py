@@ -55,6 +55,9 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         icon = {"emoji": "😴"}
         return self._update_page_icon(sleep_id, icon)
 
+    def create_steps_page(self, timecube: Timecube, steps: int, total_distance: int):
+        return self._post_new_steps(timecube, steps, total_distance)["id"]
+
     def create_task_with_subtasks(self, task: Task) -> str:
         task_id = self._post_new_task(task)
         if task.subtasks:

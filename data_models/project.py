@@ -8,6 +8,7 @@ from data_models.timecube import Timecube
 class Project:
 
     title: str
+    last_updated: Timecube
     am_id: Optional[str] = None # This is _id in AM, AM ID in Notion
     notion_id: Optional[str] = None # This is id in Notion, note in AM
     day: Optional[Timecube] = None
@@ -18,7 +19,6 @@ class Project:
     planned_week: Optional[str] = None  # In AM, this is the Monday date YYYY-MM-DD; in Notion this is the page title of the related Week, "Week ##"
     planned_month: Optional[str] = None  #In AM, this is YYYY-MM; in Notion this is the page title of the related Month, "Month 2025"
     planned_quarter: Optional[str] = None  # In AM, this is a label combination; in Notion, this is the page title of the related Quarter, "1Q 2025"
-    last_updated: Timecube = Timecube.from_epoch(int(datetime.now().timestamp() * 1000))
     done: bool = False
 
     @classmethod
