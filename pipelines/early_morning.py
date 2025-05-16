@@ -9,7 +9,10 @@ Script to run early in the morning (around 6 AM) that:
 6. Pulls time logged in tasks tagged "Declutter", titled "Yardwork" or "Cooking", or with the subcategory "Witch" from Amazing Marvin and sends to Exist
 7. Pulls today's weight, body fat, sleep, and menstrual cycle data from Garmin and updates Notion
 """
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from datetime import datetime, timedelta
 import logging
 from typing import Tuple
