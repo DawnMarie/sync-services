@@ -186,6 +186,7 @@ def sync_garmin_to_notion(garmin_service: GarminService, notion_service: NotionM
         print("Updating Notion...")
         notion_service.create_sleep_page(sleep_data)
         notion_service.create_steps_page(today, steps, total_distance)
+        notion_service.update_steps_page_with_stepbet_games(today)
         notion_service.create_today_training_page(training_status, readiness_score, description, stress)
         notion_service.update_weight_bodyfat_for_today(weight, body_fat)
         notion_service.update_menstrual_cycle_for_today(cycle_day)

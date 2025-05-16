@@ -8,8 +8,8 @@ from services.notion.page_specific import NotionPageSpecific
 from services.notion.database_specific import NotionDatabaseSpecific
 from services.notion.transformer import NotionTransformer
 
-from datetime import date, datetime, timedelta
-from typing import List
+from datetime import datetime, timedelta
+from typing import List, Tuple
 
 import os
 
@@ -22,9 +22,9 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         :return:
         """
         today_timecube = Timecube.from_datetime(datetime.today())
-        return self._get_stepbet_pages_by_start_and_end_date(self, today_timecube, today_timecube)
+        return self._get_stepbet_pages_by_start_and_end_date(today_timecube, today_timecube)
 
-    def get_habits_from_daily_tracking_page_by_date(self, timecube: Timecube) -> dict:
+    def get_habits_from_daily_tracking_page_by_date(self, timecube: Timecube) -> dict | str:
         habit_object = {}
         daily_tracking_page = self._get_daily_tracking_pages_by_date(timecube)[0]
         habits = os.getenv("HABITS").split(",")
@@ -33,17 +33,77 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
             habit_object[habit] = is_checked
         return habit_object
 
-    def get_tasks_for_sync(self, am_id_list: List):
-        tasks_to_compare = []
-        tasks_not_found = []
-        for task_id in am_id_list:
-            task_pages = self._get_task_pages_by_am_id(task_id)
-            if task_pages[0]:
-                task_dto = self._convert_task_response_to_dto(task_pages[0])
-                tasks_to_compare.append(task_dto)
-            else:
-                tasks_not_found.append(task_id)
-        return tasks_to_compare, tasks_not_found
+    def get_tasks_completed_by_date(self, timecube: Timecube) -> List[Task]:
+        task_pages = self._get_task_pages_by_scheduled_date(timecube)
+        task_dtos = []
+        if task_pages == "No page returned!":
+            return []
+        for page in task_pages:
+            if page["properties"]["Done"]["checkbox"]:
+                task = self._convert_task_response_to_dto(page)
+                task_dtos.append(task)
+        return task_dtos
+
+    def get_task_for_compare_and_sync(self, am_id: str) -> Task | str:
+        task_page = self._get_task_pages_by_am_id(am_id)
+        if task_page != "No page returned!":
+            task_dto = self._convert_task_response_to_dto(task_page[0])
+            return task_dto
+        else:
+            return task_page
+
+    def get_tasks_for_date_and_next_6_days(self, start_date: Timecube) -> Tuple[List[Task], List[Task]]:
+        """
+        Get tasks scheduled for a specific day and tasks scheduled for that day plus the next 6 days.
+
+        Args:
+            start_date: The specific day to start from
+
+        Returns:
+            A tuple containing two lists:
+            - List of tasks scheduled for the specific day
+            - List of tasks scheduled for the specific day and the next 6 days
+        """
+        # Get tasks for the specific day
+        tasks_for_day = self._get_task_pages_by_scheduled_date(start_date)
+        tasks_for_day_list = []
+
+        if tasks_for_day != "No page returned!":
+            for page in tasks_for_day:
+                task = self._convert_task_response_to_dto(page)
+                tasks_for_day_list.append(task)
+
+        # Get tasks for the next 7 days (including the specific day)
+        end_date = Timecube.from_datetime(start_date.date_in_datetime + timedelta(days=6))
+        start_date = Timecube.from_datetime(start_date.date_in_datetime + timedelta(days=1))
+        tasks_for_week_list = tasks_for_day_list.copy()
+        while start_date <= end_date:
+            tasks_for_week = self._get_task_pages_by_scheduled_date(start_date)
+            if tasks_for_week != "No page returned!":
+                for page in tasks_for_week:
+                    task = self._convert_task_response_to_dto(page)
+                    tasks_for_week_list.append(task)
+            start_date = Timecube.from_datetime(start_date.date_in_datetime + timedelta(days=1))
+
+        return tasks_for_day_list, tasks_for_week_list
+
+    def get_tasks_to_delete(self) -> List[Task]:
+        """
+        Get tasks with the Delete checkbox checked.
+        """
+        task_pages = self._get_task_pages_by_delete_checkbox()
+        if task_pages == "No page returned!":
+            return []
+
+        tasks = []
+        for page in task_pages:
+            task = self._convert_task_response_to_dto(page)
+            tasks.append(task)
+
+        return tasks
+
+    def delete_task(self, task: Task):
+        return self._delete_page_by_id(task.notion_id)
 
     def create_or_update_activity_page(self, activity: Activity) -> dict | str:
         does_activity_exist = self._get_activity_pages_by_date(activity.activity_date)
@@ -136,10 +196,25 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         steps_response = self._update_steps_page_with_steps(today_timecube, steps, total_distance)
         return dt_steps_response, steps_response
 
+    def update_steps_page_with_stepbet_games(self, timecube: Timecube):
+        game_ids = []
+        game_pages = self.get_current_stepbet_games()
+        for game in game_pages:
+            game_ids.append(game["id"])
+        return self._update_steps_page_with_stepbet_links(timecube, game_ids)
+
     def update_task_dependencies(self, task: Task) -> str:
         task_id = ""
         for dependency in task.depends_on:
             task_id = self._add_dependency_to_task(task_id, dependency)
+        return task_id
+
+    def update_task_with_subtasks(self, task: Task) -> str:
+        task_page = self._update_task(task)
+        task_id = task_page["id"]
+        if task.subtasks:
+            for subtask in task.subtasks:
+                task_id = self._add_subtask_to_task(subtask, task_id)
         return task_id
 
     def update_training_entries_for_today(self, training_status: str, training_readiness: int,

@@ -39,23 +39,35 @@ class Timecube:
     @classmethod
     def from_date_time_string(cls, date_time_str: str, local_tz: str = "America/New_York"):
         try:
-            # Try the format with fractional seconds
-            dt = datetime.strptime(date_time_str, "%Y-%m-%dT%H:%M:%S.%f")
-        except ValueError:
-            try:
-                # Try format without fractional seconds
-                dt = datetime.strptime(date_time_str, "%Y-%m-%dT%H:%M:%S")
-            except ValueError:
+            # Try to parse the ISO format with a timezone offset
+            if '+' in date_time_str or '-' in date_time_str[10:]:  # Check for timezone offset after the date portion
+                # Remove the timezone offset as we'll handle timezone conversion separately
+                dt_str = date_time_str[:-6]  # Remove the +00:00 part
+                dt = datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S.%f")
+            else:
                 try:
-                    # Try a space-separated format
-                    dt = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
+                    # Try the format with fractional seconds
+                    dt = datetime.strptime(date_time_str, "%Y-%m-%dT%H:%M:%S.%f")
                 except ValueError:
                     try:
-                        dt = datetime.strptime(date_time_str, "%Y-%m-%dT%H:%M:%S.000Z")
+                        # Try format without fractional seconds
+                        dt = datetime.strptime(date_time_str, "%Y-%m-%dT%H:%M:%S")
                     except ValueError:
-                        raise ValueError(f"Time data '{date_time_str}' doesn't match any expected formats")
+                        try:
+                            # Try a space-separated format
+                            dt = datetime.strptime(date_time_str, "%Y-%m-%d %H:%M:%S")
+                        except ValueError:
+                            try:
+                                dt = datetime.strptime(date_time_str, "%Y-%m-%dT%H:%M:%S.000Z")
+                            except ValueError:
+                                try:
+                                    # Try a simple date format
+                                    dt = datetime.strptime(date_time_str, "%Y-%m-%d")
+                                except ValueError:
+                                    raise ValueError(f"Time data '{date_time_str}' doesn't match any expected formats")
+        except Exception as e:
+            raise ValueError(f"Error parsing date time string '{date_time_str}': {str(e)}")
         return cls._build(dt, local_tz)
-
     @classmethod
     def from_date(cls, year: int, month: int, day: int, local_tz: str = "America/New_York"):
         dt = datetime(year=year, month=month, day=day, tzinfo=ZoneInfo(local_tz))

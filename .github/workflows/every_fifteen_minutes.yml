@@ -1,7 +1,7 @@
-name: Sync Amazing Marvin to Notion
+name: Task Sync Every 15 Minutes
 on:
   schedule:
-   ## - cron: '0 5-22 * * *' # Hourly from 5:00 to 10:00 UTC
+    - cron: '*/15 * * * *' # Every 15 minutes
   workflow_dispatch:
 env:
   TZ: 'America/New_York'
@@ -29,13 +29,21 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
+          pip install -e .
 
       - name: Run script
         env:
+          PYTHONPATH: ${{ github.workspace }}
+          PYTHONIOENCODING: utf-8  # Add this line
+          LANG: C.UTF-8            # Add this line
+          LC_ALL: C.UTF-8          # Add this line
+          # Add Python debugging flags
+          PYTHONVERBOSE: 1
+          PYTHONUTF8: 1
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_TASKS_DB_ID: ${{ secrets.NOTION_TASKS_DB_ID }}
           AM_TOKEN: ${{ secrets.AM_TOKEN }}
           AM_FULL_ACCESS_TOKEN: ${{ secrets.AM_FULL_ACCESS_TOKEN }}
           TZ: 'America/New_York'
         run: |
-          python garmin-activities.py
+          python pipelines/every_fifteen_minutes.py

@@ -8,6 +8,23 @@ class NotionBasic(NotionConfig):
     """
     Generic GET/POST functions for Notion
     """
+
+    def _get_database_pages_by_checkbox_field(self, database_id: str, field_name: str, field_value: bool) -> str | List[
+        dict]:
+        pages = "No page returned!"
+        query = self.client.databases.query(
+            database_id=database_id,
+            filter={
+                "and": [{
+                    "property": field_name,
+                    "checkbox": {"equals": field_value}
+                }]
+            }
+        )
+        if query['results']:
+            pages = query['results']
+        return pages
+
     def _get_database_pages_by_date_field(self, database_id: str, field_name: str, field_value: Timecube) -> str | List[dict]:
         pages = "No page returned!"
         query = self.client.databases.query(
@@ -99,6 +116,9 @@ class NotionBasic(NotionConfig):
         if query:
             page = query
         return page
+
+    def _delete_page_by_id(self, page_id: str):
+        return self.client.pages.update(page_id=page_id, archived=True)
 
     def _update_block_text(self, text: str, block_id: str, block_type: str):
         properties = {

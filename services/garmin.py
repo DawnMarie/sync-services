@@ -43,10 +43,57 @@ class GarminService:
         return activity_dtos
 
     def get_body_stats(self, day: Timecube):
-        response = self.client.get_daily_weigh_ins(day.date_Y_m_d)
-        weight = int(response.get('dateWeightList')[0].get('weight')) * 0.00220462
-        body_fat = int(response.get('dateWeightList')[0].get('bodyFat'))
-        return weight, body_fat
+        try:
+            response = self.client.get_daily_weigh_ins(day.date_Y_m_d)
+
+            # Check if the response exists
+            if not response:
+                print(f"No weight data found for {day.date_Y_m_d}")
+                return 0, 0
+
+            # Check if dateWeightList exists and has data
+            weight_list = response.get('dateWeightList')
+            if not weight_list:
+                print(f"Empty weight list for {day.date_Y_m_d}")
+                return 0, 0
+
+            # Get the first weight entry
+            weight_entry = weight_list[0]
+
+            # Extract weight with validation
+            raw_weight = weight_entry.get('weight')
+            if raw_weight is None:
+                print(f"No weight value found for {day.date_Y_m_d}")
+                weight = 0
+            else:
+                try:
+                    weight = float(raw_weight) * 0.00220462  # Convert to pounds
+                except (ValueError, TypeError):
+                    print(f"Invalid weight value: {raw_weight}")
+                    weight = 0
+
+            # Extract body fat with validation
+            raw_body_fat = weight_entry.get('bodyFat')
+            if raw_body_fat is None:
+                print(f"No body fat value found for {day.date_Y_m_d}")
+                body_fat = 0
+            else:
+                try:
+                    body_fat = float(raw_body_fat)
+                except (ValueError, TypeError):
+                    print(f"Invalid body fat value: {raw_body_fat}")
+                    body_fat = 0
+
+            return weight, body_fat
+
+        except IndexError:
+            print(f"No weight measurements found for {day.date_Y_m_d}")
+            return 0, 0
+        except Exception as e:
+            print(f"Error fetching body stats for {day.date_Y_m_d}: {str(e)}")
+            # Optionally, you could raise the exception here if you want to handle it at a higher level
+            # raise GarminDataError(f"Failed to get body stats: {str(e)}") from e
+            return 0, 0
 
     def get_training_status(self, day: Timecube):
         status_data = self.client.get_training_status(day.date_Y_m_d)

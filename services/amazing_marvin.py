@@ -1,3 +1,6 @@
+import base64
+import sys
+
 from data_models.project import Project
 from data_models.subtask import Subtask
 from data_models.task import Task
@@ -12,6 +15,7 @@ import calendar
 import os
 import re
 import requests
+import urllib.parse
 
 
 class AmazingMarvinService:
@@ -19,7 +23,7 @@ class AmazingMarvinService:
 
     def __init__(self):
         self.json_header = 'application/json'
-        self.full_access_token = os.getenv("AM_FULL_ACCESS_TOKEN")
+        self.full_access_token = self._ensure_proper_encoding(os.getenv("AM_FULL_ACCESS_TOKEN"))
         self.sync_server = os.getenv("AM_SYNC_SERVER")
         self.sync_database = os.getenv("AM_SYNC_DATABASE")
         self.sync_user = os.getenv("AM_SYNC_USER")
@@ -29,8 +33,77 @@ class AmazingMarvinService:
         self.api_headers = {'X-Full-Access-Token': self.full_access_token}
         self.database_url = f"https://{self.sync_user}:{self.sync_password}@{self.sync_server}"
 
-        self.couch = Server(self.database_url)
-        self.db = self.couch[self.sync_database]
+        try:
+            parsed_url = urllib.parse.urlparse(self.database_url)
+            print(f"Connecting to server: {parsed_url.hostname}")
+            print(f"Using database: {self.sync_database}")
+            print(f"Protocol: {parsed_url.scheme}")
+
+            # Add exception handling with full traceback
+            import traceback
+            try:
+                self.couch = Server(self.database_url)
+                self.db = self.couch[self.sync_database]
+            except Exception as e:
+                print("Full error traceback:")
+                print(traceback.format_exc())
+
+                # Specifically, check for URL encoding issues
+                try:
+                    # Try to manually encode components
+                    encoded_user = urllib.parse.quote(self.sync_user, safe='')
+                    encoded_password = urllib.parse.quote(self.sync_password, safe='')
+                    encoded_url = f"https://{encoded_user}:{encoded_password}@{self.sync_server}"
+                    print("\nAttempting connection with explicitly encoded URL...")
+                    self.couch = Server(encoded_url)
+                    self.db = self.couch[self.sync_database]
+                except Exception as e2:
+                    print("\nSecond attempt failed:")
+                    print(traceback.format_exc())
+
+                    # Print character encoding information
+                    print("\nDebug information:")
+                    print(f"Python's default encoding: {sys.getdefaultencoding()}")
+                    print(f"Environment LANG: {os.getenv('LANG')}")
+                    print(f"Environment LC_ALL: {os.getenv('LC_ALL')}")
+                    print(f"Environment PYTHONIOENCODING: {os.getenv('PYTHONIOENCODING')}")
+
+                    raise ConnectionError(f"Failed to connect to database after multiple attempts: {str(e2)}")
+        except Exception as outer_e:
+            print(f"Outer exception: {str(outer_e)}")
+            raise
+
+    @staticmethod
+    def _ensure_proper_encoding(token):
+        """Ensure the token is properly encoded regardless of environment"""
+        if token is None:
+            return None
+
+        # Try to handle the token as base64 if it appears to be base64-encoded
+        if '/' in token or '+' in token or '=' in token:
+            try:
+                # Decode and re-encode to ensure consistent format
+                # This helps normalize tokens across environments
+                decoded = base64.b64decode(token.encode('utf-8'))
+                return base64.b64encode(decoded).decode('utf-8')
+            except Exception:
+                # If decoding fails, return the original token
+                pass
+
+        return token
+
+    @staticmethod
+    def _handle_request_with_encoding(method, url, **kwargs):
+        """Wrapper for requests to handle encoding issues"""
+        try:
+            response = method(url, **kwargs)
+            response.raise_for_status()
+            return response
+        except requests.exceptions.RequestException as e:
+            # Check if it's an encoding-related error
+            if "quote_from_bytes" in str(e) or "encoding" in str(e).lower():
+                print(f"Encoding error in request: {e}")
+            raise
 
     """
     Generic GET/POST functions
@@ -71,7 +144,12 @@ class AmazingMarvinService:
             "value": value,
             "updateDB": True
         }
-        response = requests.post(url, headers=self.api_headers, json=data)
+        response = self._handle_request_with_encoding(
+            requests.post,
+            url,
+            headers=self.api_headers,
+            json=data
+        )
         return response.json()
 
     def _post_value_to_tracker(self, tracker_id: str, time_of_habit: Timecube, value: int) -> List:
@@ -85,6 +163,16 @@ class AmazingMarvinService:
 
         response = self.db.update([tracker_document])
         return response
+
+    def _delete_any_doc(self, doc_id: str) -> dict:
+        url = f"{self.api_url}doc/delete"
+        print(url)
+        data = {
+            "itemId": doc_id
+        }
+        response = requests.post(url, headers=self.api_headers, json=data)
+        print(response.json())
+        return response.json()
 
     """
     GET/POST/PATCH methods for databases with specific queries
@@ -240,6 +328,9 @@ class AmazingMarvinService:
     """
     Public functions
     """
+    def delete_task_by_id(self, task_id: str) -> dict:
+        return self._delete_any_doc(task_id)
+
     def get_project_by_id(self, project_id: str) -> Project:
         project_response = self._get_project_by_id(project_id)
         project_dto =self._convert_project_response_to_dto(project_response)

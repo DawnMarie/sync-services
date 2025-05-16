@@ -34,6 +34,9 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
     def _get_task_pages_by_am_id(self, am_id: str) -> str | List[dict]:
         return self._get_database_pages_by_text_field(self.tasks_database_id, "AM ID", am_id)
 
+    def _get_task_pages_by_delete_checkbox(self) -> str | List[dict]:
+        return self._get_database_pages_by_checkbox_field(self.tasks_database_id, "Delete", True)
+
     def _get_task_pages_by_title(self, task: str) -> str | List[dict]:
         return self._get_database_pages_by_title(self.tasks_database_id, "Title", task)
 
@@ -57,6 +60,9 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
 
     def _get_fitness_stats_pages_by_date(self, page_date: Timecube) -> str | List[dict]:
         return self._get_database_pages_by_date_field(self.stats_database_id, "Today's Date", page_date)
+
+    def _get_activity_pages_by_date(self, page_date: Timecube) -> str | List[dict]:
+        return self._get_database_pages_by_date_field(self.activity_database_id, "Date", page_date)
 
     def _get_pr_pages_by_title(self, pr: str) -> str | List[dict]:
         return self._get_database_pages_by_title(self.pr_database_id, "Record", pr)
@@ -260,7 +266,7 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
 
         if task.subcategory:
             value_goal_id = self._get_value_goal_pages_by_title(task.subcategory)[0]["id"]
-            properties["Value Goal"] = {
+            properties["Value Goals"] = {
                 "relation": [{"id": value_goal_id}]
             }
 
@@ -398,11 +404,11 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
                 properties["Scheduled"] = {"date": {"start": task.day.date_only_if_time_is_midnight}}
 
             if task.planned_week:
-                week_id = self._get_week_pages_by_title(task.planned_week)
+                week_id = self._get_week_pages_by_title(task.planned_week)[0]["id"]
                 properties["Planned Week"] = {"relation": [{"id": week_id}]}
 
             if task.planned_month:
-                month_id = self._get_month_pages_by_title(task.planned_month)
+                month_id = self._get_month_pages_by_title(task.planned_month)[0]["id"]
                 properties["Planned Month"] = {"relation": [{"id": month_id}]}
 
             if task.tags:
@@ -411,10 +417,11 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
                     properties["Tags"]["multi_select"].append({"name": tag})
 
             # Update the task in Notion
-            self._update_database_page(task.notion_id, properties)
             print(f"Updated task in Notion: {task.title}")
+            return self._update_database_page(task.notion_id, properties)
         except Exception as e:
             print(f"Error updating task in Notion: {e}")
+            return None
 
     def _update_training_page(
             self, timecube: Timecube, training_status: str, readiness_description: str,
