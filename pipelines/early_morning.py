@@ -176,12 +176,17 @@ def sync_garmin_to_notion(garmin_service: GarminService, notion_service: NotionM
     try:
         print("\nFetching Garmin data for Notion...")
         sleep_data = garmin_service.get_sleep(today)
+        calories_out, _, steps, stress, total_distance = garmin_service.get_cals_out_sleep_steps_stress_total_distance(today)
         weight, body_fat = garmin_service.get_body_stats(today)
         cycle_day = garmin_service.get_menstrual_cycle(today)
+        readiness_score, description = garmin_service.get_readiness(today)
+        training_status = garmin_service.get_training_status(today)
         print(f"Retrieved - Weight: {weight}, Body Fat: {body_fat}, Cycle Day: {cycle_day}")
 
         print("Updating Notion...")
         notion_service.create_sleep_page(sleep_data)
+        notion_service.create_steps_page(today, steps, total_distance)
+        notion_service.create_today_training_page(training_status, readiness_score, description, stress)
         notion_service.update_weight_bodyfat_for_today(weight, body_fat)
         notion_service.update_menstrual_cycle_for_today(cycle_day)
         print("Successfully synced Garmin data to Notion")

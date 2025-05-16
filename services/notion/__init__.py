@@ -45,10 +45,14 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
                 tasks_not_found.append(task_id)
         return tasks_to_compare, tasks_not_found
 
-    def create_activity_page(self, activity: Activity) -> dict:
-        activity_id = self._post_new_activity(activity)
-        icon = {"type": "external", "external": {"url": activity.icon}}
-        return self._update_page_icon(activity_id, icon)
+    def create_or_update_activity_page(self, activity: Activity) -> dict | str:
+        does_activity_exist = self._get_activity_pages_by_date(activity.activity_date)
+        if does_activity_exist == "No page returned!":
+            activity_id = self._post_new_activity(activity)
+            icon = {"type": "external", "external": {"url": activity.icon}}
+            return self._update_page_icon(activity_id, icon)
+        else:  ##TODO: Add logic to update existing activity page
+            return does_activity_exist
 
     def create_sleep_page(self, sleep: Sleep):
         sleep_id = self._post_new_sleep(sleep)["id"]

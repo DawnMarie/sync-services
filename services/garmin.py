@@ -19,7 +19,7 @@ class GarminService:
         self.client = Garmin(garmin_email, garmin_password)
         self.client.login()
 
-    def get_cals_out_sleep_stress_steps(self, day: Timecube):
+    def get_cals_out_sleep_steps_stress_total_distance(self, day: Timecube):
         response = self.client.get_stats(day.date_Y_m_d)
         calories_out = response.get('activeKilocalories') + response.get('bmrKilocalories')
         sleep = (int(response.get('sleepingSeconds'))/60)/60
