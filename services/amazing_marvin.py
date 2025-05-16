@@ -86,6 +86,14 @@ class AmazingMarvinService:
         response = self.db.update([tracker_document])
         return response
 
+    def _delete_any_doc(self, doc_id: str) -> dict:
+        url = f"{self.api_url}doc/delete"
+        data = {
+            "itemId": doc_id
+        }
+        response = requests.post(url, headers=self.api_headers, json=data)
+        return response.json()
+
     """
     GET/POST/PATCH methods for databases with specific queries
     """
@@ -240,6 +248,9 @@ class AmazingMarvinService:
     """
     Public functions
     """
+    def delete_task_by_id(self, task_id: str) -> dict:
+        return self._delete_any_doc(task_id)
+
     def get_project_by_id(self, project_id: str) -> Project:
         project_response = self._get_project_by_id(project_id)
         project_dto =self._convert_project_response_to_dto(project_response)

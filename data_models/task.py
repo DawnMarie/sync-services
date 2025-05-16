@@ -134,10 +134,10 @@ class Task:
 
         day = None
         if task_properties.get("Scheduled").get("date"):
-            day = Timecube.from_Y_m_d(task_properties.get("Scheduled").get("date").get("start"), "America/New_York")
+            day = Timecube.from_date_time_string(task_properties.get("Scheduled").get("date").get("start"), "America/New_York")
 
         depends_on = []
-        if task_properties.get("Depends On").get("relation"):
+        if task_properties.get("Dependent On").get("relation"):
             for item in task_properties.get("Depends On").get("relation"):
                 depends_on.append(item.get("title"))
 
@@ -152,8 +152,8 @@ class Task:
                 subcategory = item.get("title")
 
         pillar = None
-        if task_properties.get("Pillars").get("relation"):
-            for item in task_properties.get("Pillars").get("relation"):
+        if task_properties.get("Pillar").get("relation"):
+            for item in task_properties.get("Pillar").get("relation"):
                 pillar = item.get("title")
 
         goal = None
