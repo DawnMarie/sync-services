@@ -27,6 +27,11 @@ class ExistService:
         response = requests.post(url, headers=self.headers, json=attribute_payload)
         return response.json()
 
+    def post_yesterday_tasks_completed(self, count: int):
+        yesterday_datetime = (datetime.today() - timedelta(days=1))
+        yesterday = Timecube.from_datetime(yesterday_datetime)
+        return self._post_attribute("tasks_completed", yesterday, count)
+
     def post_yesterday_time_in_events(self, value: int):
         yesterday_datetime = (datetime.today() - timedelta(days=1))
         yesterday = Timecube.from_datetime(yesterday_datetime)

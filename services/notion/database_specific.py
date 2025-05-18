@@ -37,6 +37,9 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
     def _get_task_pages_by_delete_checkbox(self) -> str | List[dict]:
         return self._get_database_pages_by_checkbox_field(self.tasks_database_id, "Delete", True)
 
+    def _get_task_pages_by_scheduled_date(self, date: Timecube) -> str | List[dict]:
+        return self._get_database_pages_by_date_field(self.tasks_database_id, "Scheduled", date)
+
     def _get_task_pages_by_title(self, task: str) -> str | List[dict]:
         return self._get_database_pages_by_title(self.tasks_database_id, "Title", task)
 

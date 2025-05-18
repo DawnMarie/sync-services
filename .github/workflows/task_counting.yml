@@ -1,13 +1,13 @@
-name: Task Sync Every 15 Minutes
+name: Task Counting Workflow
 on:
-  schedule:
-    - cron: '*/15 * * * *' # Every 15 minutes
+  repository_dispatch:
+    types: [count-tasks]
   workflow_dispatch:
 env:
   TZ: 'America/New_York'
 
 jobs:
-  sync:
+  count-tasks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -31,21 +31,17 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
 
-      - name: Run script
+      - name: Run task counting script
         env:
           PYTHONPATH: ${{ github.workspace }}
-          PYTHONIOENCODING: utf-8  # Add this line
-          LANG: C.UTF-8            # Add this line
-          LC_ALL: C.UTF-8          # Add this line
-          # Add Python debugging flags
+          PYTHONIOENCODING: utf-8
+          LANG: C.UTF-8
+          LC_ALL: C.UTF-8
+          PYTHONVERBOSE: 1
+          PYTHONUTF8: 1
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_TASKS_DB_ID: ${{ secrets.NOTION_TASKS_DB_ID }}
-          AM_API_TOKEN: ${{ secrets.AM_API_TOKEN }}
-          AM_FULL_ACCESS_TOKEN: ${{ secrets.AM_FULL_ACCESS_TOKEN }}
-          AM_SYNC_SERVER: ${{ secrets.AM_SYNC_SERVER }}
-          AM_SYNC_DATABASE: ${{ secrets.AM_SYNC_DATABASE }}
-          AM_SYNC_USER: ${{ secrets.AM_SYNC_USER }}
-          AM_SYNC_PASSWORD: ${{ secrets.AM_SYNC_PASSWORD }}
+          EXIST_TOKEN: ${{ secrets.EXIST_TOKEN }}
           TZ: 'America/New_York'
         run: |
-          python pipelines/every_fifteen_minutes.py
+          python pipelines/task_counting.py
