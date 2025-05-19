@@ -20,7 +20,7 @@ class NotionConfig:
 
         self.pillar_database_id = os.getenv("NOTION_PILLAR_DB_ID")
         self.value_goal_database_id = os.getenv("NOTION_SUBCATEGORY_DB_ID")
-        self.goal_outcome_database_id = os.getenv("NOTION_GOAL_OUTCOME_DB_ID")
+        self.goal_outcome_database_id = os.getenv("NOTION_GOAL_DB_ID")
         self.project_database_id = os.getenv("NOTION_PROJECT_DB_ID")
         self.tasks_database_id = os.getenv("NOTION_TASKS_DB_ID")
         self.week_database_id = os.getenv("NOTION_WEEK_DB_ID")

@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from datetime import datetime, timedelta
 from typing import Tuple
 
+from data_models.task import Task
 from data_models.timecube import Timecube
 from services.garmin import GarminService
 from services.notion import NotionManager
@@ -24,6 +25,50 @@ def get_today_and_yesterday() -> Tuple[Timecube, Timecube]:
     yesterday = Timecube.from_datetime(datetime.now() - timedelta(days=1))
     return today, yesterday
 
+
+def tasks_are_different(am_task: Task, notion_task: Task) -> bool:
+    """
+    Compare two tasks to see if they are different.
+    """
+    # Compare the fields that we care about
+    if am_task.title != notion_task.title:
+        return True
+
+    if am_task.done != notion_task.done:
+        return True
+
+    if am_task.time_estimate != notion_task.time_estimate:
+        return True
+
+    if am_task.duration != notion_task.duration:
+        return True
+
+    # Compare day if both tasks have it
+    if am_task.day and notion_task.day:
+        if am_task.day.date_Y_m_d != notion_task.day.date_Y_m_d:
+            return True
+
+    # Compare planned week
+    if am_task.planned_week or notion_task.planned_week:
+        if am_task.planned_week != notion_task.planned_week:
+            return True
+
+    # Compare planned month
+    if am_task.planned_month or notion_task.planned_month:
+        if am_task.planned_month != notion_task.planned_month:
+            return True
+
+    # Compare planned quarter
+    if am_task.planned_quarter or notion_task.planned_quarter:
+        if am_task.planned_quarter != notion_task.planned_quarter:
+            return True
+
+    # If one has a day and the other doesn't, they're different
+    elif am_task.day or notion_task.day:
+        return True
+
+    # If we get here, the tasks are the same
+    return False
 
 def sync_exist_insights_to_notion(exist_service: ExistService, notion_service: NotionManager) -> None:
     """Pull insights from Exist and send them to Notion."""
@@ -195,6 +240,45 @@ def sync_garmin_to_notion(garmin_service: GarminService, notion_service: NotionM
         print(f"\nError syncing Garmin data to Notion: {str(e)}")
 
 
+def sync_am_to_notion_for_today(am_service: AmazingMarvinService, notion_service: NotionManager, today: Timecube) -> None:
+    """
+    Synchronize tasks from Amazing Marvin to Notion.
+    """
+    try:
+        # Get tasks updated in Amazing Marvin in the last 12 hours
+        am_tasks = am_service.get_tasks_by_scheduled(today)
+        print(f"Found {len(am_tasks)} tasks scheduled in Amazing Marvin for today: {today.date_Y_m_d}")
+
+        # For each task in Amazing Marvin
+        for am_task in am_tasks:
+            print(f"Processing task: {am_task}")
+            # Find the corresponding task in Notion
+            notion_task = notion_service.get_task_for_compare_and_sync(am_task.am_id)
+
+            if notion_task != "No page returned!":
+                # Task exists in Notion, check if it needs to be updated
+                if tasks_are_different(am_task, notion_task):
+                    # Tasks are different, update the Notion task with Amazing Marvin data
+                    am_task.notion_id = notion_task.notion_id
+                    notion_service.update_task_with_subtasks(am_task)
+                    print(f"Updated task in Notion: {am_task.title}")
+                else:
+                    print(f"Task already up to date in Notion: {am_task.title}")
+            else:
+                # Task doesn't exist in Notion, create it
+                task_id = notion_service.create_task_with_subtasks(am_task)
+                if task_id:
+                    am_task.notion_id = task_id
+                    print(f"Created task in Notion: {am_task.title}")
+        for am_task in am_tasks:
+            if am_task.depends_on:
+                notion_service.update_task_dependencies(am_task)
+
+        print("Amazing Marvin to Notion synchronization completed successfully")
+    except Exception as e:
+        print(f"Error synchronizing Amazing Marvin to Notion: {e}")
+
+
 def morning_sync() -> None:
     """Main function to run all morning sync tasks."""
     try:
@@ -217,12 +301,12 @@ def morning_sync() -> None:
         sync_garmin_to_exist(garmin_service, exist_service, yesterday)
         sync_am_tasks_to_exist(am_service, exist_service, yesterday)
         sync_garmin_to_notion(garmin_service, notion_service, today)
+        sync_am_to_notion_for_today(am_service, notion_service, today)
 
         print("\n=== Morning sync completed successfully ===")
     except Exception as e:
         print(f"\n!!! Error in morning sync: {str(e)} !!!")
         raise e
-
 
 if __name__ == "__main__":
     morning_sync()

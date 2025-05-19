@@ -1,6 +1,7 @@
 from data_models.activity import Activity
 from data_models.insight import Insight
 from data_models.personal_record import PR
+from data_models.project import Project
 from data_models.sleep import Sleep
 from data_models.task import Task
 from data_models.timecube import Timecube
@@ -114,6 +115,9 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         else:  ##TODO: Add logic to update existing activity page
             return does_activity_exist
 
+    def create_project_page(self, project: Project):
+        return self._post_new_project(project)
+
     def create_sleep_page(self, sleep: Sleep):
         sleep_id = self._post_new_sleep(sleep)["id"]
         icon = {"emoji": "😴"}
@@ -123,10 +127,10 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         return self._post_new_steps(timecube, steps, total_distance)["id"]
 
     def create_task_with_subtasks(self, task: Task) -> str:
-        task_id = self._post_new_task(task)
+        task_id = self._post_new_task(task)["id"]
         if task.subtasks:
             for subtask in task.subtasks:
-                task_id = self._add_subtask_to_task(subtask, task_id)
+                task_id = self._add_subtask_to_task(subtask, task_id)["id"]
         return task_id
 
     def create_today_training_page(self, training_status: str, training_readiness: int,
@@ -187,6 +191,13 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         return (self._update_database_page(page_id, properties),
                 self._update_page_icon(page_id, icon))
 
+    def update_project_dependencies(self, project: Project):
+        project_id = ""
+        for dependency in project.depends_on:
+            project_id = self._add_dependency_to_project(project, dependency)["id"]
+        return project_id
+
+
     def update_steps_entries_for_today(self, steps: int, total_distance: int):
         """
         Update existing step counts
@@ -206,7 +217,7 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
     def update_task_dependencies(self, task: Task) -> str:
         task_id = ""
         for dependency in task.depends_on:
-            task_id = self._add_dependency_to_task(task_id, dependency)
+            task_id = self._add_dependency_to_task(task_id, dependency)["id"]
         return task_id
 
     def update_task_with_subtasks(self, task: Task) -> str:

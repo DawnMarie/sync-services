@@ -138,7 +138,7 @@ class Task:
 
         depends_on = []
         if task_properties.get("Dependent On").get("relation"):
-            for item in task_properties.get("Depends On").get("relation"):
+            for item in task_properties.get("Dependent On").get("relation"):
                 depends_on.append(item.get("title"))
 
         project = None

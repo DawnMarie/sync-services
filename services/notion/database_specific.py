@@ -41,7 +41,7 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
         return self._get_database_pages_by_date_field(self.tasks_database_id, "Scheduled", date)
 
     def _get_task_pages_by_title(self, task: str) -> str | List[dict]:
-        return self._get_database_pages_by_title(self.tasks_database_id, "Title", task)
+        return self._get_database_pages_by_title(self.tasks_database_id, "Task", task)
 
     def _get_task_pages_by_last_edited(self, minutes_in_the_past: int) -> str | List[dict]:
         return self._get_database_pages_by_last_edited(self.tasks_database_id, minutes_in_the_past)
@@ -107,6 +107,30 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
         }
         return self._post_new_database_page(self.mood_database_id, properties)
 
+    def _post_new_week(self, week: str) -> dict:
+        properties = {
+            "Name": {
+                "title": [{"text": {"content": week}}]
+            }
+        }
+        return self._post_new_database_page(self.week_database_id, properties)
+
+    def _post_new_month(self, month: str) -> dict:
+        properties = {
+            "Name": {
+                "title": [{"text": {"content": month}}]
+            }
+        }
+        return self._post_new_database_page(self.month_database_id, properties)
+
+    def _post_new_quarter(self, quarter: str) -> dict:
+        properties = {
+            "Quarter": {
+                "title": [{"text": {"content": quarter}}]
+            }
+        }
+        return self._post_new_database_page(self.quarter_database_id, properties)
+
     def _post_new_project(self, project: Project) -> dict:
         pillar_id = self._get_pillar_pages_by_title(project.pillar)[0]["id"]
         properties = {
@@ -142,7 +166,7 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
                 goal_id = self._get_goal_outcome_pages_by_title(goal)[0]["id"]
                 goal_relation.append({"id": goal_id})
             properties["Goal Outcomes"] = {
-                "relation": [{"id": goal_relation}]
+                "relation": goal_relation
             }
 
         if project.planned_week:
@@ -262,7 +286,11 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
             }
 
         if task.project:
-            project_id = self._get_project_pages_by_title(task.project)[0]["id"]
+            project_page = self._get_project_pages_by_title(task.project)
+            if project_page == "No page returned!":
+                project_id = self._post_new_project(Project(title=task.project))["id"]
+            else:
+                project_id = project_page[0]["id"]
             properties["Projects"] = {
                 "relation": [{"id": project_id}]
             }
@@ -284,24 +312,36 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
             for goal in task.goal:
                 goal_id = self._get_goal_outcome_pages_by_title(goal)[0]["id"]
                 goal_relation.append({"id": goal_id})
-            properties["Goal Outcome (DB)"] = {"relation": [{"id": goal_relation}]}
+            properties["Goal Outcome"] = {"relation": goal_relation}
 
         if task.planned_week:
-            week_id = self._get_week_pages_by_title(task.planned_week)[0]["id"]
+            week_page = self._get_week_pages_by_title(task.planned_week)
+            if week_page == "No page returned!":
+                week_page_id = self._post_new_week(task.planned_week)["id"]
+            else:
+                week_page_id = week_page[0]["id"]
             properties["Planned Week"] = {
-                "relation": [{"id": week_id}]
+                "relation": [{"id": week_page_id}]
             }
 
         if task.planned_month:
-            month_id = self._get_month_pages_by_title(task.planned_month)[0]["id"]
+            month_page = self._get_month_pages_by_title(task.planned_month)
+            if month_page == "No page returned!":
+                month_page_id = self._post_new_month(task.planned_month)["id"]
+            else:
+                month_page_id = month_page[0]["id"]
             properties["Planned Month"] = {
-                "relation": [{"id": month_id}]
+                "relation": [{"id": month_page_id}]
             }
 
         if task.planned_quarter:
-            quarter_id = self._get_quarter_pages_by_title(task.planned_quarter)[0]["id"]
+            quarter_page = self._get_quarter_pages_by_title(task.planned_quarter)
+            if quarter_page == "No page returned!":
+                quarter_page_id = self._post_new_quarter(task.planned_quarter)["id"]
+            else:
+                quarter_page_id = quarter_page[0]["id"]
             properties["Planned Quarter"] = {
-                "relation": [{"id": quarter_id}]
+                "relation": [{"id": quarter_page_id}]
             }
 
         if task.tags:
@@ -437,6 +477,15 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
             "Average Stress": {"number": daily_average_stress}
         }
         return self._update_database_page(page_id, properties)
+
+    def _add_dependency_to_project(self, project_id: str, dependency_title: str):
+        dependency_id = self._get_project_pages_by_title(dependency_title)[0]["id"]
+        properties = {
+            "Dependent On": {
+                "relation": [{"id": dependency_id}]
+            }
+        }
+        return self._update_database_page(project_id, properties)
 
     def _add_subtask_to_task(self, subtask: Subtask, parent_id: str):
         subtask_id = self._post_new_subtask(subtask)

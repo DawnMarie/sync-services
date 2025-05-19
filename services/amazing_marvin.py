@@ -305,7 +305,7 @@ class AmazingMarvinService:
             if "Monthly" in task_response["labelIds"]:
                 task_dto.title = task_dto.title + " - " + calendar.month_name[task_dto.day.date_in_datetime.month]
             if "Weekly" in task_response["labelIds"]:
-                task_dto.title = task_dto.title + " Week" + task_dto.day.week_number
+                task_dto.title = task_dto.title + " Week " + task_dto.day.week_number
             if "UnDaily" in task_response["labelIds"] or "Daily" in task_response["labelIds"]:
                 task_dto.title = task_dto.title + " " + task_dto.day.date_Y_m_d
 

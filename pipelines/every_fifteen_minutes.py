@@ -74,22 +74,22 @@ def delete_tasks_from_notion_and_am() -> None:
 
         # Get tasks with the Delete checkbox checked
         tasks_to_delete = notion_service.get_tasks_to_delete()
-        logger.info(f"Found {len(tasks_to_delete)} tasks to delete")
+        print(f"Found {len(tasks_to_delete)} tasks to delete")
 
         # For each task to delete
         for task in tasks_to_delete:
             # Mark the task as in_trash in Notion
             response = notion_service.delete_task(task)
-            logger.info(f"Marked task as in_trash in Notion: {task.title}")
+            print(f"Marked task as in_trash in Notion: {task.title}")
 
             # Delete the task in Amazing Marvin if it exists
             if task.am_id:
                 response = am_service.delete_task_by_id(task.am_id)
-                logger.info(f"Deleted task in Amazing Marvin: {task.title}")
+                print(f"Deleted task in Amazing Marvin: {task.title}")
 
-        logger.info("Task deletion completed successfully")
+        print("Task deletion completed successfully")
     except Exception as e:
-        logger.error(f"Error deleting tasks: {e}")
+        print(f"Error deleting tasks: {e}")
 
 
 def sync_am_to_notion() -> None:
@@ -102,11 +102,12 @@ def sync_am_to_notion() -> None:
         notion_service = NotionManager()
 
         # Get tasks updated in Amazing Marvin in the last 12 hours
-        am_tasks = am_service.get_tasks_by_last_updated(20)
-        logger.info(f"Found {len(am_tasks)} tasks updated in Amazing Marvin in the last 20 minutes")
+        am_tasks = am_service.get_tasks_by_last_updated(45)
+        print(f"Found {len(am_tasks)} tasks updated in Amazing Marvin in the last 45 minutes")
 
         # For each task in Amazing Marvin
         for am_task in am_tasks:
+            print(f"Processing task: {am_task.title}")
             # Find the corresponding task in Notion
             notion_task = notion_service.get_task_for_compare_and_sync(am_task.am_id)
 
@@ -116,22 +117,22 @@ def sync_am_to_notion() -> None:
                     # Tasks are different, update the Notion task with Amazing Marvin data
                     am_task.notion_id = notion_task.notion_id
                     notion_service.update_task_with_subtasks(am_task)
-                    logger.info(f"Updated task in Notion: {am_task.title}")
+                    print(f"Updated task in Notion: {am_task.title}")
                 else:
-                    logger.info(f"Task already up to date in Notion: {am_task.title}")
+                    print(f"Task already up to date in Notion: {am_task.title}")
             else:
                 # Task doesn't exist in Notion, create it
                 task_id = notion_service.create_task_with_subtasks(am_task)
                 if task_id:
                     am_task.notion_id = task_id
-                    logger.info(f"Created task in Notion: {am_task.title}")
+                    print(f"Created task in Notion: {am_task.title}")
         for am_task in am_tasks:
             if am_task.depends_on:
                 notion_service.update_task_dependencies(am_task)
 
-        logger.info("Amazing Marvin to Notion synchronization completed successfully")
+        print("Amazing Marvin to Notion synchronization completed successfully")
     except Exception as e:
-        logger.error(f"Error synchronizing Amazing Marvin to Notion: {e}")
+        print(f"Error synchronizing Amazing Marvin to Notion: {e}")
 
 
 if __name__ == "__main__":
