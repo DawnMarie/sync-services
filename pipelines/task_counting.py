@@ -19,7 +19,7 @@ def count_notion_tasks_and_send_to_exist():
             upcoming_week_count = len(upcoming_week_tasks)
 
             exist_service.post_yesterday_tasks_completed(yesterday_count)
-            exist_service.post_today_next_7_days_task_count(today_count)
+            exist_service.post_today_tasks_planned(today_count)
             exist_service.post_today_next_7_days_task_count(upcoming_week_count)
 
         except Exception as e:

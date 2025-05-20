@@ -79,7 +79,7 @@ class Timecube:
             return cls._build(dt, "America/New_York")
         if isinstance(dt.tzinfo, ZoneInfo):
             ##TODO: Figure out how to get a timezone name that isn't EDT
-            return cls._build(dt, dt.tzinfo.tzname(dt))
+            return cls._build(dt, "America/New_York")
         return cls._build(dt, "UTC")
 
     @classmethod

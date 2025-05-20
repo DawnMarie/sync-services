@@ -71,19 +71,17 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
 
         if tasks_for_day != "No page returned!":
             for page in tasks_for_day:
-                task = self._convert_task_response_to_dto(page)
-                tasks_for_day_list.append(task)
+                tasks_for_day_list.append(page)
 
         # Get tasks for the next 7 days (including the specific day)
         end_date = Timecube.from_datetime(start_date.date_in_datetime + timedelta(days=6))
         start_date = Timecube.from_datetime(start_date.date_in_datetime + timedelta(days=1))
         tasks_for_week_list = tasks_for_day_list.copy()
-        while start_date <= end_date:
+        while start_date.date_in_datetime <= end_date.date_in_datetime:
             tasks_for_week = self._get_task_pages_by_scheduled_date(start_date)
             if tasks_for_week != "No page returned!":
                 for page in tasks_for_week:
-                    task = self._convert_task_response_to_dto(page)
-                    tasks_for_week_list.append(task)
+                    tasks_for_week_list.append(page)
             start_date = Timecube.from_datetime(start_date.date_in_datetime + timedelta(days=1))
 
         return tasks_for_day_list, tasks_for_week_list

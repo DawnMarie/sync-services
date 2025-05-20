@@ -39,7 +39,15 @@ jobs:
           LC_ALL: C.UTF-8          # Add this line
           # Add Python debugging flags
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DAILY_TRACKING_DB_ID: ${{ secrets.NOTION_DAILY_TRACKING_DB_ID }}
+          NOTION_PILLAR_DB_ID: ${{ secrets.NOTION_PILLAR_DB_ID }}
+          NOTION_WEEK_DB_ID: ${{ secrets.NOTION_WEEK_DB_ID }}
+          NOTION_MONTH_DB_ID: ${{ secrets.NOTION_MONTH_DB_ID }}
+          NOTION_QUARTER_DB_ID: ${{ secrets.NOTION_QUARTER_DB_ID }}
+          NOTION_PROJECT_DB_ID: ${{ secrets.NOTION_PROJECT_DB_ID }}
           NOTION_TASKS_DB_ID: ${{ secrets.NOTION_TASKS_DB_ID }}
+          NOTION_GOAL_DB_ID: ${{ secrets.NOTION_GOAL_DB_ID }}
+          NOTION_SUBCATEGORY_DB_ID: ${{ secrets.NOTION_SUBCATEGORY_DB_ID }}
           AM_API_TOKEN: ${{ secrets.AM_API_TOKEN }}
           AM_FULL_ACCESS_TOKEN: ${{ secrets.AM_FULL_ACCESS_TOKEN }}
           AM_SYNC_SERVER: ${{ secrets.AM_SYNC_SERVER }}

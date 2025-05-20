@@ -6,9 +6,12 @@ This script is designed to be run periodically by a cron job.
 
 import logging
 
+from data_models.timecube import Timecube
 from services.amazing_marvin import AmazingMarvinService
 from services.notion import NotionManager
 from data_models.task import Task
+
+from datetime import datetime, timedelta
 
 # Set up logging
 logging.basicConfig(
@@ -101,13 +104,13 @@ def sync_am_to_notion() -> None:
         am_service = AmazingMarvinService()
         notion_service = NotionManager()
 
-        # Get tasks updated in Amazing Marvin in the last 12 hours
-        am_tasks = am_service.get_tasks_by_last_updated(45)
+        # Get tasks updated in Amazing Marvin in the last 30 minutes
+        am_tasks = am_service.get_tasks_by_last_updated(30)
         print(f"Found {len(am_tasks)} tasks updated in Amazing Marvin in the last 45 minutes")
 
         # For each task in Amazing Marvin
         for am_task in am_tasks:
-            print(f"Processing task: {am_task.title}")
+            print(f"Processing task: {am_task}")
             # Find the corresponding task in Notion
             notion_task = notion_service.get_task_for_compare_and_sync(am_task.am_id)
 

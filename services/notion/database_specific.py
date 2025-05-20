@@ -460,7 +460,6 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
                     properties["Tags"]["multi_select"].append({"name": tag})
 
             # Update the task in Notion
-            print(f"Updated task in Notion: {task.title}")
             return self._update_database_page(task.notion_id, properties)
         except Exception as e:
             print(f"Error updating task in Notion: {e}")
