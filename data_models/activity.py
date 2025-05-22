@@ -15,7 +15,7 @@ class Activity:
     type: str = ""
     subtype: str = ""
     distance: float = 0  # in miles
-    duration: int = 0  # in minutes
+    duration: float = 0  # in minutes
     cals_burned: int = 0
     avg_pace: str = ""
     training_effect: str = ""
@@ -49,6 +49,12 @@ class Activity:
         "Yoga": "https://img.icons8.com/?size=100&id=9783&format=png&color=9A6DD7",
         # Add more mappings as needed
     }
+
+    ACTIVITY_COMPARISON_FIELDS = [
+        'title', 'type', 'subtype', 'distance', 'duration', 'cals_burned',
+        'avg_pace', 'training_effect', 'aerobic', 'aerobic_effect',
+        'anaerobic', 'anaerobic_effect', 'pr', 'fav', 'icon'
+    ]
 
     @staticmethod
     def _format_activity_type(activity_type: str, activity_name=""):
@@ -160,7 +166,7 @@ class Activity:
             type=activity_type,
             subtype=activity_subtype,
             distance=distance,
-            duration=round(int(garmin_response.get('duration')), 2),
+            duration=round(int(garmin_response.get('duration'))/60, 2),
             cals_burned=round(int(garmin_response.get('calories')), 0),
             avg_pace=activity_pace,
             avg_power=avg_power,
@@ -174,3 +180,84 @@ class Activity:
             fav=bool(garmin_response.get('favorite')),
             icon=icon_url
         )
+
+    @classmethod
+    def from_notion_json(cls, notion_response: dict) -> "Activity":
+        """Create an Activity instance from Notion JSON response."""
+        activity_properties = notion_response["properties"]
+
+        # Extract activity date
+        activity_date = Timecube.from_date_time_string(activity_properties.get("Date").get("date").get("start"))
+
+        # Extract activity type and subtype
+        activity_type = activity_properties.get("Activity Type").get("select").get("name")
+        activity_subtype = activity_properties.get("Subactivity Type").get("select").get("name")
+
+        # Extract title
+        title = activity_properties.get("Activity Name").get("title")[0].get("plain_text")
+
+        # Extract numeric values
+        distance = activity_properties.get("Distance (miles)").get("number") or 0
+        duration = activity_properties.get("Duration (min)").get("number") or 0
+        cals_burned = activity_properties.get("Calories").get("number") or 0
+
+        # Extract pace
+        avg_pace = ""
+        if activity_properties.get("Avg Pace").get("rich_text"):
+            avg_pace = activity_properties.get("Avg Pace").get("rich_text")[0].get("plain_text")
+
+        # Extract power values
+        avg_power = activity_properties.get("Avg Power").get("number")
+        max_power = activity_properties.get("Max Power").get("number")
+
+        # Extract training effect
+        training_effect = activity_properties.get("Training Effect").get("select").get("name")
+
+        # Extract aerobic and anaerobic values
+        aerobic = activity_properties.get("Aerobic").get("number") or 0
+        aerobic_effect = activity_properties.get("Aerobic Effect").get("select").get("name")
+        anaerobic = activity_properties.get("Anaerobic").get("number") or 0
+        anaerobic_effect = activity_properties.get("Anaerobic Effect").get("select").get("name")
+
+        # Extract boolean values
+        pr = activity_properties.get("PR").get("checkbox")
+        fav = activity_properties.get("Fav").get("checkbox")
+
+        # Get icon URL based on activity type/subtype
+        icon_url = cls.ACTIVITY_ICONS.get(activity_subtype if activity_subtype != activity_type else activity_type)
+
+        return cls(
+            title=title,
+            activity_date=activity_date,
+            type=activity_type,
+            subtype=activity_subtype,
+            distance=distance,
+            duration=duration,
+            cals_burned=cals_burned,
+            avg_pace=avg_pace,
+            avg_power=avg_power,
+            max_power=max_power,
+            training_effect=training_effect,
+            aerobic=aerobic,
+            aerobic_effect=aerobic_effect,
+            anaerobic=anaerobic,
+            anaerobic_effect=anaerobic_effect,
+            pr=pr,
+            fav=fav,
+            icon=icon_url
+        )
+
+    def is_different_than(self, other_activity: "Activity") -> bool:
+        """
+        Compare this activity with another activity and determine if they have any differences in their fields.
+
+        Args:
+            other_activity: Another Activity object to compare with
+
+        Returns:
+            bool: True if activities have differences, False if they are identical
+        """
+        def _compare_field(field_name: str) -> bool:
+            return getattr(self, field_name) != getattr(other_activity, field_name)
+
+        return any(_compare_field(field) for field in self.ACTIVITY_COMPARISON_FIELDS)

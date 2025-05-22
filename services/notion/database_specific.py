@@ -387,6 +387,28 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
         }
         return self._post_new_database_page(self.stats_database_id, properties)
 
+    def _update_activity_page(self, activity: Activity, activity_page_id: str):
+        properties = {
+            "Date": {"date": {"start": activity.activity_date.date_time_Y_m_d_H_M_S}},
+            "Activity Type": {"select": {"name": activity.type}},
+            "Subactivity Type": {"select": {"name": activity.subtype}},
+            "Activity Name": {"title": [{"text": {"content": activity.title}}]},
+            "Distance (miles)": {"number": activity.distance},
+            "Duration (min)": {"number": activity.duration},
+            "Calories": {"number": activity.cals_burned},
+            "Avg Pace": {"rich_text": [{"text": {"content": activity.avg_pace}}]},
+            "Avg Power": {"number": activity.avg_power},
+            "Max Power": {"number": activity.max_power},
+            "Training Effect": {"select": {"name": activity.training_effect}},
+            "Aerobic": {"number": activity.aerobic},
+            "Aerobic Effect": {"select": {"name": activity.aerobic_effect}},
+            "Anaerobic": {"number": activity.anaerobic},
+            "Anaerobic Effect": {"select": {"name": activity.anaerobic_effect}},
+            "PR": {"checkbox": activity.pr},
+            "Fav": {"checkbox": activity.fav}
+        }
+        return self._update_database_page(activity_page_id, properties)
+
     def _update_daily_tracking_page(self, timecube: Timecube, field: str, field_type: str, value: str | int):
         page_id = self._get_daily_tracking_pages_by_date(timecube)[0]["id"]
         properties = {

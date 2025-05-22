@@ -107,10 +107,15 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
     def create_or_update_activity_page(self, activity: Activity) -> dict | str:
         does_activity_exist = self._get_activity_pages_by_date(activity.activity_date)
         if does_activity_exist == "No page returned!":
-            activity_id = self._post_new_activity(activity)
+            activity_id = self._post_new_activity(activity)["id"]
             icon = {"type": "external", "external": {"url": activity.icon}}
             return self._update_page_icon(activity_id, icon)
-        else:  ##TODO: Add logic to update existing activity page
+        else:
+            notion_activity = Activity.from_notion_json(does_activity_exist[0])
+            if activity.is_different_than(notion_activity):
+                activity_id = self._update_activity_page(activity, does_activity_exist[0]["id"])["id"]
+                icon = {"type": "external", "external": {"url": activity.icon}}
+                return self._update_page_icon(activity_id, icon)
             return does_activity_exist
 
     def create_project_page(self, project: Project):
@@ -275,4 +280,3 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         weight_daily_response = self._update_daily_tracking_page(today_timecube, "Weight", "number", weight)
         bf_daily_response = self._update_daily_tracking_page(today_timecube, "Body Fat", "number", body_fat)
         return weight_daily_response, bf_daily_response
-
