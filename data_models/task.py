@@ -129,7 +129,7 @@ class Task:
         task_properties = notion_response["properties"]
 
         am_id = None
-        if task_properties.get("AM ID").get("rich_text")[0].get("plain_text"):
+        if task_properties.get("AM ID").get("rich_text"):
             am_id = task_properties.get("AM ID").get("rich_text")[0].get("plain_text")
 
         day = None
