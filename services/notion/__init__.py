@@ -111,11 +111,24 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
             icon = {"type": "external", "external": {"url": activity.icon}}
             return self._update_page_icon(activity_id, icon)
         else:
-            notion_activity = Activity.from_notion_json(does_activity_exist[0])
-            if activity.is_different_than(notion_activity):
-                activity_id = self._update_activity_page(activity, does_activity_exist[0]["id"])["id"]
+            # Flag to track if we found a matching activity
+            matching_activity_found = False
+
+            for page in does_activity_exist:
+                notion_activity = Activity.from_notion_json(page)
+                # Compare each notion page to garmin activity
+                if not activity.is_different_than(notion_activity):
+                    # Found a match, no need to create or update
+                    matching_activity_found = True
+                    return page
+
+            # If no matching activity was found, create a new one
+            if not matching_activity_found:
+                activity_id = self._post_new_activity(activity)["id"]
                 icon = {"type": "external", "external": {"url": activity.icon}}
                 return self._update_page_icon(activity_id, icon)
+
+            # This line should not be reached, but keeping it for safety
             return does_activity_exist
 
     def create_project_page(self, project: Project):
