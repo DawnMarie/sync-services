@@ -9,12 +9,12 @@ from data_models.timecube import Timecube
 from couchdb import Server
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from time import time
-from typing import List
+from typing import List, Any
 import calendar
 import os
 import re
 import requests
+import time
 import urllib.parse
 
 
@@ -112,7 +112,9 @@ class AmazingMarvinService:
         projects_payload = {'db': 'Categories'}
         projects_payload.update(payload)
         projects_selector = {'selector': projects_payload}
+        print(f"Sending project request with payload:", projects_selector)
         projects_map = self.db.find(projects_selector)
+        time.sleep(3)
         projects_dto = []
 
         # Collect all documents from the map into a list
@@ -127,14 +129,19 @@ class AmazingMarvinService:
         except Exception as e:
             return f"Error retrieving projects: {str(e)}"
 
-    def _get_tasks(self, payload: dict) -> map | str:
-        tasks_payload = {'db': 'Tasks'}
+    def _get_tasks(self, payload: dict) -> str | list[Any]:
+        day =  (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
+        tasks_payload = {'db': 'Tasks', 'day': {'$lte': day}}
         tasks_payload.update(payload)
         tasks_selector = {'selector': tasks_payload}
+        print(f"Sending task request with payload:", tasks_selector)
         tasks_map = self.db.find(tasks_selector)
-        if tasks_map is None:
+        time.sleep(3)
+        tasks_list = list(tasks_map)
+        if len(tasks_list) == 0:
             return "No tasks returned!"
-        return tasks_map
+        else:
+            return tasks_list
 
     def _post_habit(self, habit_id: str, completion_time: Timecube, value: int) -> dict:
         url = f"{self.api_url}updateHabit"
@@ -144,16 +151,20 @@ class AmazingMarvinService:
             "value": value,
             "updateDB": True
         }
+        print(f"Sending habit request with payload:", data)
         response = self._handle_request_with_encoding(
             requests.post,
             url,
             headers=self.api_headers,
             json=data
         )
+        time.sleep(3)
         return response.json()
 
     def _post_value_to_tracker(self, tracker_id: str, time_of_habit: Timecube, value: int) -> List:
+        print(f"Sending tracker request with payload:", tracker_id)
         tracker_document = self.db.get(tracker_id)
+        time.sleep(3)
         tracker_history = tracker_document['history']
 
         tracker_history.append(time_of_habit.date_in_ms)
@@ -161,7 +172,9 @@ class AmazingMarvinService:
         tracker_document['history'] = tracker_history
         tracker_document['updatedAt'] = int(time() * 1000)
 
+        print(f"Sending tracker update with payload:", tracker_document)
         response = self.db.update([tracker_document])
+        time.sleep(3)
         return response
 
     def _delete_any_doc(self, doc_id: str) -> dict:
@@ -170,7 +183,9 @@ class AmazingMarvinService:
         data = {
             "itemId": doc_id
         }
+        print(f"Sending deletion request with payload:", data)
         response = requests.post(url, headers=self.api_headers, json=data)
+        time.sleep(3)
         print(response.json())
         return response.json()
 
@@ -193,7 +208,7 @@ class AmazingMarvinService:
 
     def _get_task_by_id(self, task_id: str) -> dict:
         payload = {'_id': task_id}
-        task = next(self._get_tasks(payload))
+        task = self._get_tasks(payload)[0]
         return task
 
     """
@@ -228,7 +243,9 @@ class AmazingMarvinService:
 
     def _replace_label_ids_with_label_titles(self, labels: List[str]) -> List[str]:
         url = f"{self.api_url}labels"
+        print(f"Sending label request with url:", url)
         response = requests.get(url, headers=self.api_headers).json()
+        time.sleep(3)
 
         id_to_title = {}
         for item in response:
@@ -266,7 +283,9 @@ class AmazingMarvinService:
             for goal_id in goal_ids:
                 goal_payload = {'db': 'Goals', '_id': goal_id}
                 goal_selector = {'selector': goal_payload}
+                print(f"Sending goal request with payload:", goal_selector)
                 goal_map = self.db.find(goal_selector)
+                time.sleep(3)
                 if goal_map is None:
                     return Exception("Goal id invalid!")
                 for row in goal_map:
@@ -342,10 +361,11 @@ class AmazingMarvinService:
         return project_dto
 
     def get_tasks_by_project(self, project_id: str) -> List[Task]:
-        payload = {'parentId': project_id}
-        tasks_map = self._get_tasks(payload)
+        day = (datetime.now().date() + timedelta(days=14)).strftime('%Y-%m-%d')
+        payload = {'parentId': project_id, 'day': {'$lte': day}}
+        tasks_list = self._get_tasks(payload)
         tasks = []
-        for row in tasks_map:
+        for row in tasks_list:
             task_dto = self._convert_task_response_to_dto(row)
             tasks.append(task_dto)
         return tasks
@@ -381,7 +401,9 @@ class AmazingMarvinService:
 
     def post_habit_by_title(self, title: str, completion_time: Timecube, value: int) -> dict | str:
         url = f"{self.api_url}habits?raw=1"
+        print(f"Sending habit request with url:", url)
         habits_list = requests.get(url, headers=self.api_headers).json()
+        time.sleep(3)
         habit_id = ""
         for habit in habits_list:
             if habit.get('title') == title:
@@ -392,12 +414,16 @@ class AmazingMarvinService:
 
     def post_daily_note(self, date: Timecube, note: str) -> tuple:
         note_payload = {'db': 'DayItems', '_id': 'di_' + date.date_Y_m_d, 'note': note}
+        print(f"Sending note request with payload:", note_payload)
         response = self.db.save(note_payload)
+        time.sleep(3)
         return response
 
     def post_value_to_tracker_by_title(self, tracker_title: str, time_of_habit: Timecube, value: int) -> List | str:
         tracker_selector = {'selector': {'db': 'Trackers'}}
+        print(f"Sending tracker request with payload:", tracker_selector)
         tracker_list = self.db.find(tracker_selector)
+        time.sleep(3)
         tracker_id = ""
         for tracker in tracker_list:
             if tracker['title'] == tracker_title:

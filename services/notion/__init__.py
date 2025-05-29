@@ -233,7 +233,7 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
     def update_task_dependencies(self, task: Task) -> str:
         task_id = ""
         for dependency in task.depends_on:
-            task_id = self._add_dependency_to_task(task_id, dependency)["id"]
+            task_id = self._add_dependency_to_task(task.notion_id, dependency)["id"]
         return task_id
 
     def update_task_with_subtasks(self, task: Task) -> str:
