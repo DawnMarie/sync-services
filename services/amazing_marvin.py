@@ -33,6 +33,11 @@ class AmazingMarvinService:
         self.api_headers = {'X-Full-Access-Token': self.full_access_token}
         self.database_url = f"https://{self.sync_user}:{self.sync_password}@{self.sync_server}"
 
+        # Add cache dictionaries
+        self._project_cache = {}  # Cache for projects by ID
+        self._goal_cache = {}     # Cache for goals by ID
+        self._label_cache = None  # Cache for all labels (will be populated on first use)
+
         try:
             parsed_url = urllib.parse.urlparse(self.database_url)
             print(f"Connecting to server: {parsed_url.hostname}")
@@ -193,11 +198,21 @@ class AmazingMarvinService:
     GET/POST/PATCH methods for databases with specific queries
     """
     def _get_project_by_id(self, am_id: str) -> dict:
+        # Check cache first
+        if am_id in self._project_cache:
+            return self._project_cache[am_id]
+
+        # If not in cache, make the API call
         project_payload = {'_id': am_id}
         projects = self._get_projects(project_payload)
         if isinstance(projects, str):
             raise Exception(projects)
-        return projects[0] if projects else {}
+
+        result = projects[0] if projects else {}
+
+        # Store in cache
+        self._project_cache[am_id] = result
+        return result
 
     def _get_project_by_name(self, am_name: str) -> dict:
         project_payload = {'title': am_name}
@@ -242,21 +257,24 @@ class AmazingMarvinService:
         return dto
 
     def _replace_label_ids_with_label_titles(self, labels: List[str]) -> List[str]:
-        url = f"{self.api_url}labels"
-        print(f"Sending label request with url:", url)
-        response = requests.get(url, headers=self.api_headers).json()
-        time.sleep(3)
+        # Populate label cache if it's empty
+        if self._label_cache is None:
+            url = f"{self.api_url}labels"
+            print(f"Sending label request with url:", url)
+            response = requests.get(url, headers=self.api_headers).json()
+            time.sleep(3)
 
-        id_to_title = {}
-        for item in response:
-            key = item["_id"]
-            value = item["title"]
-            id_to_title[key] = value
+            self._label_cache = {}
+            for item in response:
+                key = item["_id"]
+                value = item["title"]
+                self._label_cache[key] = value
 
+        # Use the cache to resolve labels
         resolved_labels = []
         for label in labels:
-            if label in id_to_title:
-                resolved_label = id_to_title[label]
+            if label in self._label_cache:
+                resolved_label = self._label_cache[label]
             else:
                 resolved_label = label
             resolved_labels.append(resolved_label)
@@ -281,6 +299,12 @@ class AmazingMarvinService:
 
         if goal_ids:
             for goal_id in goal_ids:
+                # Check cache first
+                if goal_id in self._goal_cache:
+                    goal_titles.append(self._goal_cache[goal_id])
+                    continue
+
+                # If not in cache, make the API call
                 goal_payload = {'db': 'Goals', '_id': goal_id}
                 goal_selector = {'selector': goal_payload}
                 print(f"Sending goal request with payload:", goal_selector)
@@ -288,8 +312,12 @@ class AmazingMarvinService:
                 time.sleep(3)
                 if goal_map is None:
                     return Exception("Goal id invalid!")
+
                 for row in goal_map:
-                    goal_titles.append(row["title"])
+                    goal_title = row["title"]
+                    goal_titles.append(goal_title)
+                    # Store in cache
+                    self._goal_cache[goal_id] = goal_title
 
         return goal_titles
 
@@ -311,21 +339,21 @@ class AmazingMarvinService:
             task_dto.subtasks = subtask_dtos
 
         if "labelIds" in task_response:
-            task_response["labelIds"] = self._replace_label_ids_with_label_titles(task_response["labelIds"])
+            task_dto.tags = self._replace_label_ids_with_label_titles(task_response["labelIds"])
 
         if task_response.get("recurring"):
-            if "Yearly" in task_response["labelIds"]:
+            if "Yearly" in task_dto.tags:
                 task_dto.title = task_dto.title + " " + str(task_dto.day.date_in_datetime.year)
-            if "Quarterly" in task_response["labelIds"]:
-                for label in task_response["labelIds"]:
+            if "Quarterly" in task_dto.tags:
+                for label in task_dto.tags:
                     if label in ("Q1", "Q2", "Q3", "Q4"):
                         task_dto.planned_quarter = label + " 2025"
                         task_dto.title = task_dto.title + " " + label
-            if "Monthly" in task_response["labelIds"]:
+            if "Monthly" in task_dto.tags:
                 task_dto.title = task_dto.title + " - " + calendar.month_name[task_dto.day.date_in_datetime.month]
-            if "Weekly" in task_response["labelIds"]:
+            if "Weekly" in task_dto.tags:
                 task_dto.title = task_dto.title + " Week " + task_dto.day.week_number
-            if "UnDaily" in task_response["labelIds"] or "Daily" in task_response["labelIds"]:
+            if "UnDaily" in task_dto.tags or "Daily" in task_dto.tags:
                 task_dto.title = task_dto.title + " " + task_dto.day.date_Y_m_d
 
         return task_dto
