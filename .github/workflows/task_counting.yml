@@ -37,7 +37,6 @@ jobs:
           PYTHONIOENCODING: utf-8
           LANG: C.UTF-8
           LC_ALL: C.UTF-8
-          PYTHONVERBOSE: 1
           PYTHONUTF8: 1
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_TASKS_DB_ID: ${{ secrets.NOTION_TASKS_DB_ID }}
