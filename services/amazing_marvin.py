@@ -223,8 +223,11 @@ class AmazingMarvinService:
 
     def _get_task_by_id(self, task_id: str) -> dict:
         payload = {'_id': task_id}
-        task = self._get_tasks(payload)[0]
-        return task
+        task = self._get_tasks(payload)
+        if task != "No tasks returned!":
+            return task[0]
+        else:
+            return task
 
     """
     Utility functions to modify or edit data, not specifically to GET or POST information to AM
@@ -286,7 +289,8 @@ class AmazingMarvinService:
         resolved_dependencies = []
         for item in dependencies:
             dependency_response = self._get_task_by_id(item)
-            resolved_dependencies.append(dependency_response["title"])
+            if dependency_response != "No tasks returned!":
+                resolved_dependencies.append(dependency_response["title"])
         return resolved_dependencies
 
     def _replace_goal_id_with_goal_title(self, am_response: dict) -> List[str] | Exception:
