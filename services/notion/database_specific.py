@@ -467,6 +467,8 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
 
             if task.day:
                 properties["Scheduled"] = {"date": {"start": task.day.date_only_if_time_is_midnight}}
+            else:
+                properties["Scheduled"] = {"date": None}
 
             if task.planned_week:
                 week_id = self._get_week_pages_by_title(task.planned_week)[0]["id"]

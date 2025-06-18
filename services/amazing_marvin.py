@@ -135,8 +135,7 @@ class AmazingMarvinService:
             return f"Error retrieving projects: {str(e)}"
 
     def _get_tasks(self, payload: dict) -> str | list[Any]:
-        day =  (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
-        tasks_payload = {'db': 'Tasks', 'day': {'$lte': day}}
+        tasks_payload = {'db': 'Tasks'}
         tasks_payload.update(payload)
         tasks_selector = {'selector': tasks_payload}
         print(f"Sending task request with payload:", tasks_selector)
@@ -393,8 +392,8 @@ class AmazingMarvinService:
         return project_dto
 
     def get_tasks_by_project(self, project_id: str) -> List[Task]:
-        day = (datetime.now().date() + timedelta(days=14)).strftime('%Y-%m-%d')
-        payload = {'parentId': project_id, 'day': {'$lte': day}}
+        day =  (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
+        payload = {'parentId': project_id, '$or': [{'day': {'$lte': day}}, {'day': 'unassigned'}]}
         tasks_list = self._get_tasks(payload)
         tasks = []
         for row in tasks_list:
