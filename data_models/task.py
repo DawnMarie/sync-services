@@ -89,6 +89,7 @@ class Task:
     def from_am_json(cls, am_response: Dict[str, str]) -> "Task":
         """Create a Task instance from Amazing Marvin JSON response."""
         title = am_response.get("title")
+        print(f"Converting task from AM:", title, am_response.get("_id"))
         day = None
 
         if ("day" in am_response) & (am_response.get("day") != "unassigned"):
