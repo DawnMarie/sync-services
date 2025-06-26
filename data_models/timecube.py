@@ -1,6 +1,6 @@
 """Object to contain all the necessary time formats"""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
@@ -91,6 +91,12 @@ class Timecube:
     def from_timestamp(cls, timestamp: int, local_tz: str = "America/New_York"):
         dt = datetime.fromtimestamp(timestamp)
         return cls._build(dt, local_tz)
+
+    def add_timedelta(self, delta: timedelta):
+        return Timecube.from_datetime(self.date_in_datetime + delta)
+
+    def subtract_timedelta(self, delta: timedelta):
+        return Timecube.from_datetime(self.date_in_datetime - delta)
 
     @classmethod
     def _build(cls, dt: datetime, local_tz: str):

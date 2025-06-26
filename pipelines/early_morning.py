@@ -140,26 +140,26 @@ def sync_gcal_to_exist(gcal_service: GoogleCalendarService, exist_service: Exist
         time_in_events = sum(event.duration for event in events if event.duration)
 
         print("Posting data to Exist...")
-        exist_service.post_yesterday_number_of_events(num_events)
-        exist_service.post_yesterday_time_in_events(time_in_events)
+        exist_service.post_number_of_events(yesterday, num_events)
+        exist_service.post_time_in_events(yesterday, time_in_events)
 
         for event in events:
             if 'activism' in event.tags:
-                exist_service.post_yesterday_activism()
+                exist_service.post_activism(yesterday)
             if 'coven' in event.tags:
-                exist_service.post_yesterday_coven()
+                exist_service.post_coven(yesterday)
             if 'family' in event.tags:
-                exist_service.post_yesterday_family()
+                exist_service.post_family(yesterday)
             if 'guest' in event.tags:
-                exist_service.post_yesterday_guest()
+                exist_service.post_guest(yesterday)
             if 'social' in event.tags:
-                exist_service.post_yesterday_social()
+                exist_service.post_social(yesterday)
         print("Successfully synced calendar data")
     except Exception as e:
         print(f"\nError syncing calendar data: {str(e)}")
 
 
-def sync_garmin_to_exist(garmin_service: GarminService, exist_service: ExistService, yesterday: Timecube) -> None:
+def sync_garmin_to_exist(garmin_service: GarminService, exist_service: ExistService, yesterday: Timecube, today: Timecube) -> None:
     """Sync Garmin data to Exist."""
     try:
         print("\nFetching data from Garmin...")
@@ -170,17 +170,19 @@ def sync_garmin_to_exist(garmin_service: GarminService, exist_service: ExistServ
 
         readiness_score, description = garmin_service.get_readiness(yesterday)
         stress = garmin_service.get_daily_average_stress(yesterday)
-        print(f"Readiness: {readiness_score}, Stress: {stress}")
+        hrv = garmin_service.get_hrv(today)
+        print(f"Readiness: {readiness_score}, Stress: {stress}, HRV: {hrv}")
 
         print("Posting data to Exist...")
-        exist_service.post_yesterday_readiness(readiness_score)
-        exist_service.post_yesterday_stress(stress)
+        exist_service.post_readiness(yesterday, readiness_score)
+        exist_service.post_stress(yesterday, stress)
+        exist_service.post_hrv(today, hrv)
 
         for activity in yesterday_activities:
             if activity.type == 'Running':
-                exist_service.post_yesterday_run()
+                exist_service.post_run(yesterday)
             if activity.type == 'Strength':
-                exist_service.post_yesterday_strength()
+                exist_service.post_strength(yesterday)
         print("Successfully synced Garmin data")
     except Exception as e:
         print(f"\nError syncing Garmin data: {str(e)}")
@@ -207,10 +209,10 @@ def sync_am_tasks_to_exist(am_service: AmazingMarvinService, exist_service: Exis
                     witchcraft_time += task.duration if task.duration else 0
 
         print("Posting task times to Exist...")
-        exist_service.post_today_declutter_time(declutter_time)
-        exist_service.post_today_yardwork_time(yardwork_time)
-        exist_service.post_today_cooking_time(cooking_time)
-        exist_service.post_today_witchcraft_time(witchcraft_time)
+        exist_service.post_declutter_time(yesterday, declutter_time)
+        exist_service.post_yardwork_time(yesterday, yardwork_time)
+        exist_service.post_cooking_time(yesterday, cooking_time)
+        exist_service.post_witchcraft_time(yesterday, witchcraft_time)
         print("Successfully synced task data")
     except Exception as e:
         print(f"\nError syncing task data: {str(e)}")
@@ -223,6 +225,7 @@ def sync_garmin_to_notion(garmin_service: GarminService, notion_service: NotionM
         sleep_data = garmin_service.get_sleep(today)
         calories_out, _, steps, stress, total_distance = garmin_service.get_cals_out_sleep_steps_stress_total_distance(today)
         weight, body_fat = garmin_service.get_body_stats(today)
+        hrv = garmin_service.get_hrv(today)
         cycle_day = garmin_service.get_menstrual_cycle(today)
         readiness_score, description = garmin_service.get_readiness(today)
         training_status = garmin_service.get_training_status(today)
@@ -233,7 +236,7 @@ def sync_garmin_to_notion(garmin_service: GarminService, notion_service: NotionM
         notion_service.create_steps_page(today, steps, total_distance)
         notion_service.update_steps_page_with_stepbet_games(today)
         notion_service.create_today_training_page(training_status, readiness_score, description, stress)
-        notion_service.update_weight_bodyfat_for_today(weight, body_fat)
+        notion_service.update_weight_bodyfat_hrv_for_today(weight, body_fat, hrv)
         notion_service.update_menstrual_cycle_for_today(cycle_day)
         print("Successfully synced Garmin data to Notion")
     except Exception as e:
@@ -298,7 +301,7 @@ def morning_sync() -> None:
         sync_habits_to_am_and_exist(notion_service, am_service, exist_service, yesterday)
         sync_exist_data_to_notion_and_am(exist_service, notion_service, am_service, yesterday)
         sync_gcal_to_exist(gcal_service, exist_service, yesterday)
-        sync_garmin_to_exist(garmin_service, exist_service, yesterday)
+        sync_garmin_to_exist(garmin_service, exist_service, yesterday, today)
         sync_am_tasks_to_exist(am_service, exist_service, yesterday)
         sync_garmin_to_notion(garmin_service, notion_service, today)
         sync_am_to_notion_for_today(am_service, notion_service, today)

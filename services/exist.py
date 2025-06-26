@@ -27,98 +27,70 @@ class ExistService:
         response = requests.post(url, headers=self.headers, json=attribute_payload)
         return response.json()
 
-    def post_yesterday_tasks_completed(self, count: int):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("tasks_completed", yesterday, count)
+    ## Productivity Group
+    def post_declutter_time(self, timecube: Timecube, value: int):
+        return self._post_attribute("declutter", timecube, value)
 
-    def post_yesterday_time_in_events(self, value: int):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("events_duration", yesterday, value)
+    def post_next_7_days_task_count(self, timecube: Timecube, value: int):
+        return self._post_attribute("next_7_days", timecube, value)
 
-    def post_yesterday_number_of_events(self, value: int):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("events", yesterday, value)
+    def post_tasks_completed(self, timecube: Timecube, count: int):
+        return self._post_attribute("tasks_completed", timecube, count)
 
-    def post_today_tasks_planned(self, value: int):
-        today = Timecube.from_datetime(datetime.today())
-        return self._post_attribute("tasks_planned", today, value)
+    def post_tasks_planned(self, timecube: Timecube, value: int):
+        return self._post_attribute("tasks_planned", timecube, value)
 
-    def post_today_tasks_completed(self, value: int):
-        today = Timecube.from_datetime(datetime.today())
-        return self._post_attribute("tasks_completed", today, value)
+    def post_yardwork_time(self, timecube: Timecube, value: int):
+        return self._post_attribute("yardwork", timecube, value)
 
-    def post_today_next_7_days_task_count(self, value: int):
-        today = Timecube.from_datetime(datetime.today())
-        return self._post_attribute("next_7_days", today, value)
+    ## Events Group
+    def post_number_of_events(self, timecube: Timecube, value: int):
+        return self._post_attribute("events", timecube, value)
 
-    def post_today_declutter_time(self, value: int):
-        today = Timecube.from_datetime(datetime.today())
-        return self._post_attribute("declutter", today, value)
+    def post_time_in_events(self, timecube: Timecube, value: int):
+        return self._post_attribute("events_duration", timecube, value)
 
-    def post_today_yardwork_time(self, value: int):
-        today = Timecube.from_datetime(datetime.today())
-        return self._post_attribute("yardwork", today, value)
+    ## Health and body Group
+    def post_hrv(self, timecube: Timecube, value: int):
+        return self._post_attribute("heartrate_variability", timecube, value)
 
-    def post_today_cooking_time(self, value: int):
-        today = Timecube.from_datetime(datetime.today())
-        return self._post_attribute("cooking", today, value)
+    def post_witchcraft_time(self, timecube: Timecube, value: int):
+        return self._post_attribute("witchcraft", timecube, value)
 
-    def post_today_witchcraft_time(self, value: int):
-        today = Timecube.from_datetime(datetime.today())
-        return self._post_attribute("witchcraft", today, value)
+    ## Food and drink Group
+    def post_cooking_time(self, timecube: Timecube, value: int):
+        return self._post_attribute("cooking", timecube, value)
 
-    def post_yesterday_readiness(self, value: int):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("readiness", yesterday, value)
+    def post_readiness(self, timecube: Timecube, value: int):
+         return self._post_attribute("readiness", timecube, value)
 
-    def post_yesterday_stress(self, value: int):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("stress", yesterday, value)
+    def post_stress(self, timecube: Timecube, value: int):
+        return self._post_attribute("stress", timecube, value)
 
-    def post_yesterday_activism(self):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("activism", yesterday, 1)
+    ## Custom tabs Group
+    def post_activism(self, timecube: Timecube):
+        return self._post_attribute("activism", timecube, 1)
 
-    def post_yesterday_coven(self):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("coven", yesterday, 1)
+    def post_coven(self, timecube: Timecube):
+        return self._post_attribute("coven", timecube, 1)
 
-    def post_yesterday_run(self):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("run", yesterday, 1)
+    def post_family(self, timecube: Timecube):
+        return self._post_attribute("family", timecube, 1)
 
-    def post_yesterday_social(self):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("social", yesterday, 1)
+    def post_guest(self, timecube: Timecube):
+         return self._post_attribute("guest", timecube, 1)
 
-    def post_yesterday_family(self):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("family", yesterday, 1)
+    def post_run(self, timecube: Timecube):
+        return self._post_attribute("run", timecube, 1)
 
-    def post_yesterday_guest(self):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("guest", yesterday, 1)
+    def post_social(self, timecube: Timecube):
+         return self._post_attribute("social", timecube, 1)
 
-    def post_yesterday_strength(self):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("strength", yesterday, 1)
+    def post_strength(self, timecube: Timecube):
+        return self._post_attribute("strength", timecube, 1)
 
-    def post_yesterday_wfh(self):
-        yesterday_datetime = (datetime.today() - timedelta(days=1))
-        yesterday = Timecube.from_datetime(yesterday_datetime)
-        return self._post_attribute("wfh", yesterday, 1)
+    def post_wfh(self, timecube: Timecube):
+        return self._post_attribute("wfh", timecube, 1)
 
     def get_insights(self) -> List[Insight]:
         url = f"{self.url}insights/"

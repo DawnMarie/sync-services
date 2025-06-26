@@ -391,6 +391,11 @@ class AmazingMarvinService:
         project_dto =self._convert_project_response_to_dto(project_response)
         return project_dto
 
+    def get_task_by_id(self, task_id: str) -> Task:
+        task_response = self._get_task_by_id(task_id)
+        task_dto = self._convert_task_response_to_dto(task_response)
+        return task_dto
+
     def get_tasks_by_project(self, project_id: str) -> List[Task]:
         day =  (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
         payload = {'parentId': project_id, '$or': [{'day': {'$lte': day}}, {'day': 'unassigned'}]}

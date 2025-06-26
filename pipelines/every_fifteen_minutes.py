@@ -101,8 +101,8 @@ def sync_am_to_notion() -> None:
         am_service = AmazingMarvinService()
         notion_service = NotionManager()
 
-        # Get tasks updated in Amazing Marvin in the last 30 minutes
-        am_tasks = am_service.get_tasks_by_last_updated(45)
+        # Get tasks updated in Amazing Marvin in the last 60 minutes
+        am_tasks = am_service.get_tasks_by_last_updated(60)
         print(f"Found {len(am_tasks)} tasks updated in Amazing Marvin in the last 45 minutes")
 
         # For each task in Amazing Marvin

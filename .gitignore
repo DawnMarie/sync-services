@@ -122,3 +122,6 @@ dmypy.json
 # OS specific files
 .DS_Store
 Thumbs.db
+
+#Scratch work
+/reference/
