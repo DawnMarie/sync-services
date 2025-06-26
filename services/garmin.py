@@ -28,6 +28,11 @@ class GarminService:
         total_distance = round(int(response.get('totalDistanceMeters')) * 0.000621371, 2)
         return calories_out, sleep, steps, stress, total_distance
 
+    def get_hrv(self, day: Timecube):
+        response = self.client.get_hrv_data(day.date_Y_m_d)
+        hrv = response.get('hrvSummary').get('lastNightAvg')
+        return hrv
+
     def get_sleep(self, day: Timecube):
         response = self.client.get_sleep_data(day.date_Y_m_d)
         sleep_dto = Sleep.from_garmin_json(response.get('dailySleepDTO'))

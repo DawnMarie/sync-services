@@ -288,8 +288,9 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         return status_daily_response, readiness_daily_response, \
             description_daily_response, stress_daily_response, stats_response
 
-    def update_weight_bodyfat_for_today(self, weight: int, body_fat: int):
+    def update_weight_bodyfat_hrv_for_today(self, weight: int, body_fat: int, hrv: int):
         today_timecube = Timecube.from_datetime(datetime.today())
         weight_daily_response = self._update_daily_tracking_page(today_timecube, "Weight", "number", weight)
         bf_daily_response = self._update_daily_tracking_page(today_timecube, "Body Fat", "number", body_fat)
-        return weight_daily_response, bf_daily_response
+        hrv_daily_response = self._update_daily_tracking_page(today_timecube, "HRV", "number", hrv)
+        return weight_daily_response, bf_daily_response, hrv_daily_response
