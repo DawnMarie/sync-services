@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from data_models.activity import Activity
 from data_models.project import Project
 from data_models.sleep import Sleep
@@ -467,6 +469,9 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
 
             if task.day:
                 properties["Scheduled"] = {"date": {"start": task.day.date_only_if_time_is_midnight}}
+                if task.day.date_in_datetime == datetime.today().date():
+                    daily_tracking_id = self._get_daily_tracking_pages_by_date(task.day)[0]["id"]
+                    properties["Daily Tracking"] = {"relation": [{"id": daily_tracking_id}]}
             else:
                 properties["Scheduled"] = {"date": None}
 
@@ -477,6 +482,10 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
             if task.planned_month:
                 month_id = self._get_month_pages_by_title(task.planned_month)[0]["id"]
                 properties["Planned Month"] = {"relation": [{"id": month_id}]}
+
+            if task.planned_quarter:
+                quarter_id = self._get_quarter_pages_by_title(task.planned_quarter)[0]["id"]
+                properties["Planned Quarter"] = {"relation": [{"id": quarter_id}]}
 
             if task.tags:
                 properties["Tags"] = {"multi_select": []}
