@@ -68,6 +68,7 @@ class Timecube:
         except Exception as e:
             raise ValueError(f"Error parsing date time string '{date_time_str}': {str(e)}")
         return cls._build(dt, local_tz)
+
     @classmethod
     def from_date(cls, year: int, month: int, day: int, local_tz: str = "America/New_York"):
         dt = datetime(year=year, month=month, day=day, tzinfo=ZoneInfo(local_tz))
@@ -147,6 +148,14 @@ class Timecube:
     @property
     def week_number(self) -> str:
         return self._localized_dt().strftime("%V")
+
+    @property
+    def month_name(self):
+        return self._localized_dt().strftime('%B')
+
+    @property
+    def quarter(self):
+        return (self.date_in_datetime.month - 1) // 3 + 1
 
     @property
     def date_M_Y(self):

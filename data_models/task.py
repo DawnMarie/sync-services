@@ -23,8 +23,8 @@ class Task:
     time_estimate: Optional[int] = None  # In minutes; timeEstimate (ms) in AM, Estimated Duration in Notion
     duration: Optional[int] = None  # In minutes; duration (ms) in AM, Tracked Time in Notion
     planned_week: Optional[str] = None  # In AM, this is the Monday date YYYY-MM-DD; in Notion this is the page title of the related Week, "Week ##"
-    planned_month: Optional[str] = None  #In AM, this is YYYY-MM; in Notion this is the page title of the related Month, "Month 2025"
-    planned_quarter: Optional[str] = None  # In AM, this is a label combination; in Notion, this is the page title of the related Quarter, "1Q 2025"
+    planned_month: Optional[str] = None  #In AM, this is YYYY-MM; in Notion this is the page title of the related Month, "Month 2025".
+    planned_quarter: Optional[str] = None  # In AM, this is a label combination; in Notion, this is the page title of the related Quarter, "Q1 2025"
     subtasks: Optional[List[Subtask]] = None  #In AM, this is a clear Task -> Subtask relationship. In Notion, this is a Parent item -> Sub-item relationship
     tags: Optional[List[str]] = None
     done: bool = False
@@ -41,7 +41,7 @@ class Task:
         """Count completed and incomplete tasks in a list."""
         task_counts = {'done': 0, 'incomplete': 0}
         for task in task_list:
-            if task.done is True:
+            if task.done:
                 task_counts['done'] = int(task_counts['done']) + 1
             else:
                 task_counts['incomplete'] = int(task_counts['incomplete']) + 1

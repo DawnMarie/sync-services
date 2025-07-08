@@ -79,25 +79,7 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
         return self._get_database_pages_by_start_and_end_date_field(self.stepbet_database_id, start_date, end_date)
 
     def _post_new_activity(self, activity: Activity):
-        properties = {
-            "Date": {"date": {"start": activity.activity_date.date_time_Y_m_d_H_M_S}},
-            "Activity Type": {"select": {"name": activity.type}},
-            "Subactivity Type": {"select": {"name": activity.subtype}},
-            "Activity Name": {"title": [{"text": {"content": activity.title}}]},
-            "Distance (miles)": {"number": activity.distance},
-            "Duration (min)": {"number": activity.duration},
-            "Calories": {"number": activity.cals_burned},
-            "Avg Pace": {"rich_text": [{"text": {"content": activity.avg_pace}}]},
-            "Avg Power": {"number": activity.avg_power},
-            "Max Power": {"number": activity.max_power},
-            "Training Effect": {"select": {"name": activity.training_effect}},
-            "Aerobic": {"number": activity.aerobic},
-            "Aerobic Effect": {"select": {"name": activity.aerobic_effect}},
-            "Anaerobic": {"number": activity.anaerobic},
-            "Anaerobic Effect": {"select": {"name": activity.anaerobic_effect}},
-            "PR": {"checkbox": activity.pr},
-            "Fav": {"checkbox": activity.fav}
-        }
+        properties = self._create_activity_properties(activity)
         return self._post_new_database_page(self.activity_database_id, properties)
 
     def _post_new_mood(self, mood_date: Timecube, mood: str):
@@ -283,9 +265,10 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
         }
 
         if task.day:
-            properties["Scheduled"] = {
-                "date": {"start": task.day.date_only_if_time_is_midnight}
-            }
+            properties = self._create_time_cycle_properties(task, properties)
+        else:
+            properties["Scheduled"] = {"date": None}
+            properties = self._set_time_cycles(properties, task)
 
         if task.project:
             project_page = self._get_project_pages_by_title(task.project)
@@ -293,21 +276,15 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
                 project_id = self._post_new_project(Project(title=task.project))["id"]
             else:
                 project_id = project_page[0]["id"]
-            properties["Projects"] = {
-                "relation": [{"id": project_id}]
-            }
+            properties["Projects"] = {"relation": [{"id": project_id}]}
 
         if task.subcategory:
             value_goal_id = self._get_value_goal_pages_by_title(task.subcategory)[0]["id"]
-            properties["Value Goals"] = {
-                "relation": [{"id": value_goal_id}]
-            }
+            properties["Value Goals"] = {"relation": [{"id": value_goal_id}]}
 
         if task.pillar:
             pillar_id = self._get_pillar_pages_by_title(task.pillar)[0]["id"]
-            properties["Pillar"] = {
-                "relation": [{"id": pillar_id}]
-            }
+            properties["Pillar"] = {"relation": [{"id": pillar_id}]}
 
         if task.goal:
             goal_relation = []
@@ -316,36 +293,6 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
                 goal_relation.append({"id": goal_id})
             properties["Goal Outcome"] = {"relation": goal_relation}
 
-        if task.planned_week:
-            week_page = self._get_week_pages_by_title(task.planned_week)
-            if week_page == "No page returned!":
-                week_page_id = self._post_new_week(task.planned_week)["id"]
-            else:
-                week_page_id = week_page[0]["id"]
-            properties["Planned Week"] = {
-                "relation": [{"id": week_page_id}]
-            }
-
-        if task.planned_month:
-            month_page = self._get_month_pages_by_title(task.planned_month)
-            if month_page == "No page returned!":
-                month_page_id = self._post_new_month(task.planned_month)["id"]
-            else:
-                month_page_id = month_page[0]["id"]
-            properties["Planned Month"] = {
-                "relation": [{"id": month_page_id}]
-            }
-
-        if task.planned_quarter:
-            quarter_page = self._get_quarter_pages_by_title(task.planned_quarter)
-            if quarter_page == "No page returned!":
-                quarter_page_id = self._post_new_quarter(task.planned_quarter)["id"]
-            else:
-                quarter_page_id = quarter_page[0]["id"]
-            properties["Planned Quarter"] = {
-                "relation": [{"id": quarter_page_id}]
-            }
-
         if task.tags:
             properties["Tags"] = {"multi_select": []}
             for tag in task.tags:
@@ -353,14 +300,10 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
 
         if task.done:
             status = "Done"
-            properties["Done"] = {
-                "checkbox": True
-            }
+            properties["Done"] = {"checkbox": True}
         else:
             status = "Active"
-            properties["Done"] = {
-                "checkbox": False
-            }
+            properties["Done"] = {"checkbox": False}
         properties["Status"] = {"status": {"name": status}}
 
         return self._post_new_database_page(self.tasks_database_id, properties)
@@ -390,25 +333,7 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
         return self._post_new_database_page(self.stats_database_id, properties)
 
     def _update_activity_page(self, activity: Activity, activity_page_id: str):
-        properties = {
-            "Date": {"date": {"start": activity.activity_date.date_time_Y_m_d_H_M_S}},
-            "Activity Type": {"select": {"name": activity.type}},
-            "Subactivity Type": {"select": {"name": activity.subtype}},
-            "Activity Name": {"title": [{"text": {"content": activity.title}}]},
-            "Distance (miles)": {"number": activity.distance},
-            "Duration (min)": {"number": activity.duration},
-            "Calories": {"number": activity.cals_burned},
-            "Avg Pace": {"rich_text": [{"text": {"content": activity.avg_pace}}]},
-            "Avg Power": {"number": activity.avg_power},
-            "Max Power": {"number": activity.max_power},
-            "Training Effect": {"select": {"name": activity.training_effect}},
-            "Aerobic": {"number": activity.aerobic},
-            "Aerobic Effect": {"select": {"name": activity.aerobic_effect}},
-            "Anaerobic": {"number": activity.anaerobic},
-            "Anaerobic Effect": {"select": {"name": activity.anaerobic_effect}},
-            "PR": {"checkbox": activity.pr},
-            "Fav": {"checkbox": activity.fav}
-        }
+        properties = self._create_activity_properties(activity)
         return self._update_database_page(activity_page_id, properties)
 
     def _update_daily_tracking_page(self, timecube: Timecube, field: str, field_type: str, value: str | int):
@@ -467,36 +392,23 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
             if task.duration:
                 properties["Tracked Time (min)"] = {"number": task.duration}
 
-            if task.day:
-                properties["Scheduled"] = {"date": {"start": task.day.date_only_if_time_is_midnight}}
-                if task.day.date_in_datetime == datetime.today().date():
-                    daily_tracking_id = self._get_daily_tracking_pages_by_date(task.day)[0]["id"]
-                    properties["Daily Tracking"] = {"relation": [{"id": daily_tracking_id}]}
-            else:
-                properties["Scheduled"] = {"date": None}
-
-            if task.planned_week:
-                week_id = self._get_week_pages_by_title(task.planned_week)[0]["id"]
-                properties["Planned Week"] = {"relation": [{"id": week_id}]}
-
-            if task.planned_month:
-                month_id = self._get_month_pages_by_title(task.planned_month)[0]["id"]
-                properties["Planned Month"] = {"relation": [{"id": month_id}]}
-
-            if task.planned_quarter:
-                quarter_id = self._get_quarter_pages_by_title(task.planned_quarter)[0]["id"]
-                properties["Planned Quarter"] = {"relation": [{"id": quarter_id}]}
-
             if task.tags:
                 properties["Tags"] = {"multi_select": []}
                 for tag in task.tags:
                     properties["Tags"]["multi_select"].append({"name": tag})
 
+            if task.day:
+                properties = self._create_time_cycle_properties(task, properties)
+            else:
+                properties["Scheduled"] = {"date": None}
+                properties = self._set_time_cycles(properties, task)
+
             # Update the task in Notion
             return self._update_database_page(task.notion_id, properties)
+
         except Exception as e:
-            print(f"Error updating task in Notion: {e}")
-            return None
+                print(f"Error updating task in Notion: {e}")
+                return None
 
     def _update_training_page(
             self, timecube: Timecube, training_status: str, readiness_description: str,
@@ -536,3 +448,75 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
             }
         }
         return self._update_database_page(task_id, properties)
+
+    @staticmethod
+    def _create_activity_properties(activity):
+        properties = {
+            "Date": {"date": {"start": activity.activity_date.date_time_Y_m_d_H_M_S}},
+            "Activity Type": {"select": {"name": activity.type}},
+            "Subactivity Type": {"select": {"name": activity.subtype}},
+            "Activity Name": {"title": [{"text": {"content": activity.title}}]},
+            "Distance (miles)": {"number": activity.distance},
+            "Duration (min)": {"number": activity.duration},
+            "Calories": {"number": activity.cals_burned},
+            "Avg Pace": {"rich_text": [{"text": {"content": activity.avg_pace}}]},
+            "Avg Power": {"number": activity.avg_power},
+            "Max Power": {"number": activity.max_power},
+            "Training Effect": {"select": {"name": activity.training_effect}},
+            "Aerobic": {"number": activity.aerobic},
+            "Aerobic Effect": {"select": {"name": activity.aerobic_effect}},
+            "Anaerobic": {"number": activity.anaerobic},
+            "Anaerobic Effect": {"select": {"name": activity.anaerobic_effect}},
+            "PR": {"checkbox": activity.pr},
+            "Fav": {"checkbox": activity.fav}
+        }
+        return properties
+
+    def _create_time_cycle_properties(self, task, properties):
+            today = Timecube.from_datetime(datetime.today())
+            is_today = task.day.date_in_datetime.date() == today.date_in_datetime.date()
+            is_work = (task.project == "Meetings") or (task.project == "Andover")
+            if is_today and not is_work:
+                week_title = f"Week {today.week_number}<<"
+                month_title = f"{today.date_M_Y}<<"
+                quarter_title = f"Q{today.quarter} {today.date_in_datetime.year}<<"
+
+                daily_tracking_id = self._get_daily_tracking_pages_by_date(task.day)[0]["id"]
+                week_id = self._get_week_pages_by_title(week_title)[0]["id"]
+                month_id = self._get_month_pages_by_title(month_title)[0]["id"]
+                quarter_id = self._get_quarter_pages_by_title(quarter_title)[0]["id"]
+
+                properties["Daily Tracking"] = {"relation": [{"id": daily_tracking_id}]}
+                properties["Planned Week"] = {"relation": [{"id": week_id}]}
+                properties["Planned Month"] = {"relation": [{"id": month_id}]}
+                properties["Planned Quarter"] = {"relation": [{"id": quarter_id}]}
+
+            else:
+                properties["Scheduled"] = {"date": {"start": task.day.date_only_if_time_is_midnight}}
+                properties = self._set_time_cycles(properties, task)
+
+            return properties
+
+    def _set_time_cycles(self, properties, task) -> dict:
+        if task.planned_week:
+            week_page = self._get_week_pages_by_title(task.planned_week)
+            if week_page == "No page returned!":
+                week_page_id = self._post_new_week(task.planned_week)["id"]
+            else:
+                week_page_id = week_page[0]["id"]
+            properties["Planned Week"] = {"relation": [{"id": week_page_id}]}
+        if task.planned_month:
+            month_page = self._get_month_pages_by_title(task.planned_month)
+            if month_page == "No page returned!":
+                month_page_id = self._post_new_month(task.planned_month)["id"]
+            else:
+                month_page_id = month_page[0]["id"]
+            properties["Planned Month"] = {"relation": [{"id": month_page_id}]}
+        if task.planned_quarter:
+            quarter_page = self._get_quarter_pages_by_title(task.planned_quarter)
+            if quarter_page == "No page returned!":
+                quarter_page_id = self._post_new_quarter(task.planned_quarter)["id"]
+            else:
+                quarter_page_id = quarter_page[0]["id"]
+            properties["Planned Quarter"] = {"relation": [{"id": quarter_page_id}]}
+        return properties
