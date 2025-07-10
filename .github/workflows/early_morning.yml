@@ -1,8 +1,13 @@
 name: Early Morning Sync
 on:
-  schedule:
-    - cron: '0 10 * * *' # 6:00 AM EDT (10:00 UTC)
+  #schedule:
+   # - cron: '0 10 * * *' # 6:00 AM EDT (10:00 UTC)
   workflow_dispatch:
+    inputs:
+      name:
+        description: "DawnMarie"
+        required: true
+        default: "warning"
 env:
   TZ: 'America/New_York'
 
