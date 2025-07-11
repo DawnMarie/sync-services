@@ -393,8 +393,11 @@ class AmazingMarvinService:
 
     def get_task_by_id(self, task_id: str) -> Task:
         task_response = self._get_task_by_id(task_id)
-        task_dto = self._convert_task_response_to_dto(task_response)
-        return task_dto
+        if task_response != "No tasks returned!":
+            task_dto = self._convert_task_response_to_dto(task_response)
+            return task_dto
+        else:
+            return task_response
 
     def get_tasks_by_project(self, project_id: str) -> List[Task]:
         day =  (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')

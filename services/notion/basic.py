@@ -179,7 +179,7 @@ class NotionBasic(NotionConfig):
         self._database_query_cache[cache_key] = pages
         return pages
 
-    def _get_block_children_by_id(self, block_id: str) -> List[str]:
+    def _get_block_children_by_id(self, block_id: str) -> List[dict]:
         # Generate cache key
         cache_key = self._generate_cache_key("block_children", block_id)
 
@@ -188,16 +188,16 @@ class NotionBasic(NotionConfig):
             return self._database_query_cache[cache_key]
 
         # If not in cache, make the API call
-        block_ids = []
+        blocks = []
         query = self.client.blocks.children.list(
             block_id=block_id
         )
         for item in query["results"]:
-            block_ids.append(item["id"])
+            block = {"id": item["id"], "type": item["type"]}
+            blocks.append(block)
 
         # Store in cache
-        self._database_query_cache[cache_key] = block_ids
-        return block_ids
+        return blocks
 
     def _get_page_by_id(self, page_id: str) -> str | dict:
         # Check cache first

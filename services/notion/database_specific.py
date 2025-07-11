@@ -486,6 +486,7 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
                 month_id = self._get_month_pages_by_title(month_title)[0]["id"]
                 quarter_id = self._get_quarter_pages_by_title(quarter_title)[0]["id"]
 
+                properties["Scheduled"] = {"date": {"start": task.day.date_only_if_time_is_midnight}}
                 properties["Daily Tracking"] = {"relation": [{"id": daily_tracking_id}]}
                 properties["Planned Week"] = {"relation": [{"id": week_id}]}
                 properties["Planned Month"] = {"relation": [{"id": month_id}]}

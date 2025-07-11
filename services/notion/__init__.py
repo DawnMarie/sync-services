@@ -34,6 +34,16 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
             habit_object[habit] = is_checked
         return habit_object
 
+    def get_tasks_by_scheduled(self, scheduled_date: Timecube) -> List[Task]:
+        task_pages = self._get_task_pages_by_scheduled_date(scheduled_date)
+        task_dtos = []
+        if task_pages == "No page returned!":
+            return []
+        for page in task_pages:
+            task = self._convert_task_response_to_dto(page)
+            task_dtos.append(task)
+        return task_dtos
+
     def get_tasks_completed_by_date(self, timecube: Timecube) -> List[Task]:
         task_pages = self._get_task_pages_by_scheduled_date(timecube)
         task_dtos = []
