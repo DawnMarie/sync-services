@@ -8,6 +8,5 @@ class NotionPageSpecific(NotionBasic):
         return self._update_block_text(insight.insight, insight_id, "heading_2"), self._update_block_text(insight.detail, detail_id, "heading_3")
 
     def _update_weekly_insight(self, insight: Insight, insight_id: str, detail_id: str):
-        #TODO: Check why secondary line not updating here
-        return self._update_block_text(insight.insight, insight_id, "heading_3"), self._update_block_text(insight.detail, detail_id, "text")
+        return self._update_block_text(insight.insight, insight_id, "heading_3"), self._update_block_text(insight.detail, detail_id, "paragraph")
 

@@ -159,14 +159,53 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         return self._update_daily_tracking_page(timecube, "Calories Out", "number", calories_out)
 
     def update_daily_insights_block(self, daily_insights: List[Insight]):
-        block_ids = self._get_block_children_by_id(self.insight_block_id)
-        title_change_response = self._update_block_text(datetime.today().strftime('%A') + " Insights", block_ids[0], "heading_1")
-        insight_responses = [self._update_daily_insight(daily_insights[0], block_ids[1], block_ids[2]),
-                             self._update_daily_insight(daily_insights[1], block_ids[3], block_ids[4]),
-                             self._update_daily_insight(daily_insights[2], block_ids[5], block_ids[6]),
-                             self._update_weekly_insight(daily_insights[3], block_ids[8], block_ids[9]),
-                             self._update_weekly_insight(daily_insights[4], block_ids[10], block_ids[11]),
-                             self._update_weekly_insight(daily_insights[5], block_ids[12], block_ids[13])]
+        blocks = self._get_block_children_by_id(self.insight_block_id)
+        title_change_response = self._update_block_text(datetime.today().strftime('%A') + " Insights", blocks[0]["id"], "heading_1")
+
+        block_number = 1
+        insight_number = 0
+        insight_responses = []
+
+        while insight_number < len(daily_insights) and block_number < len(blocks):
+            insight = daily_insights[insight_number]
+
+            # 2. Daily insight: update heading_2/heading_3
+            if insight.insight_type == "Daily":
+                if (block_number + 1 < len(blocks) and
+                        blocks[block_number]["type"] == "heading_2" and
+                        blocks[block_number + 1]["type"] == "heading_3"):
+                    response = self._update_daily_insight(insight, blocks[block_number]["id"], blocks[block_number + 1]["id"])
+                    insight_responses.append(response)
+                    block_number += 2
+                    insight_number += 1
+                else:
+                    block_number += 1  # Skip to next block if types don't match
+            # 2a. Weekly insight: clear heading_2/heading_3 until divider
+            elif insight.insight_type == "Weekly":
+                while (block_number < len(blocks) and blocks[block_number]["type"] == "heading_2"):
+                    self._update_block_text("", blocks[block_number]["id"], "heading_2")
+                    self._update_block_text("", blocks[block_number]["id"], "heading_3")
+                    block_number += 2
+                # 3. Update heading_3/paragraph for weekly insight
+                while (block_number + 1 < len(blocks) and
+                       blocks[block_number]["type"] == "heading_3" and
+                       blocks[block_number + 1]["type"] == "paragraph"):
+                    response = self._update_weekly_insight(insight, blocks[block_number]["id"], blocks[block_number + 1]["id"])
+                    insight_responses.append(response)
+                    block_number += 2
+                    insight_number += 1
+                    break  # Only one weekly insight per block pair
+                else:
+                    block_number += 1
+            else:
+                block_number += 1
+
+        # 4. Clear out any remaining blocks
+        while block_number < len(blocks):
+            block = blocks[block_number]
+            if block["type"] in ("heading_2", "heading_3", "paragraph"):
+                self._update_block_text("", block["id"], block["type"])
+                block_number += 1
         return title_change_response, insight_responses
 
     def update_menstrual_cycle_for_today(self, menstrual_cycle_day: int):
