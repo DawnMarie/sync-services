@@ -506,6 +506,8 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
             else:
                 week_page_id = week_page[0]["id"]
             properties["Planned Week"] = {"relation": [{"id": week_page_id}]}
+        else:
+            properties["Planned Week"] = {"relation": []}
         if task.planned_month:
             month_page = self._get_month_pages_by_title(task.planned_month)
             if month_page == "No page returned!":
@@ -513,6 +515,8 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
             else:
                 month_page_id = month_page[0]["id"]
             properties["Planned Month"] = {"relation": [{"id": month_page_id}]}
+        else:
+            properties["Planned Month"] = {"relation": []}
         if task.planned_quarter:
             quarter_page = self._get_quarter_pages_by_title(task.planned_quarter)
             if quarter_page == "No page returned!":
