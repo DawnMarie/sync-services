@@ -3,6 +3,12 @@ on:
   repository_dispatch:
     types: [count-tasks]
   workflow_dispatch:
+    inputs:
+      name:
+        description: "DawnMarie"
+        required: true
+        default: "warning"
+        
 env:
   TZ: 'America/New_York'
 
