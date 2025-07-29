@@ -222,22 +222,19 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         today_timecube = Timecube.from_datetime(datetime.today())
         return self._update_daily_tracking_page(today_timecube, "Cycle Day", "number", menstrual_cycle_day)
 
-    def update_mood_in_daily_tracking_and_mood_tracker(self, mood: int):
-        yesterday_timecube = Timecube.from_datetime(datetime.today() - timedelta(days=1))
+    def update_mood_in_daily_tracking_and_mood_tracker(self, mood: int, timecube: Timecube):
         mood_str = self._convert_mood_int_to_str(mood)
-        daily_mood_response = self._update_daily_tracking_page(yesterday_timecube, "Mood", "select", {"name": mood_str})
-        mood_tracker_response = self._post_new_mood(yesterday_timecube, mood_str)
+        daily_mood_response = self._update_daily_tracking_page(timecube, "Mood", "select", {"name": mood_str})
+        mood_tracker_response = self._post_new_mood(timecube, mood_str)
         return daily_mood_response, mood_tracker_response
 
-    def update_daily_note_for_yesterday(self, daily_note: str):
-        yesterday_timecube = Timecube.from_datetime(datetime.today() - timedelta(days=1))
+    def update_daily_note(self, daily_note: str, timecube: Timecube):
         daily_note = [{"text": {"content": daily_note}}]
-        return self._update_daily_tracking_page(yesterday_timecube, "Daily Note", "rich_text", daily_note)
+        return self._update_daily_tracking_page(timecube, "Daily Note", "rich_text", daily_note)
 
-    def update_mobile_screen_time_for_yesterday(self, mobile_screen_time):
-        yesterday_timecube = Timecube.from_datetime(datetime.today() - timedelta(days=1))
+    def update_mobile_screen_time(self, mobile_screen_time: int, timecube: Timecube):
         return self._update_daily_tracking_page(
-            yesterday_timecube, "Mobile Screen Time (min)", "number", mobile_screen_time)
+            timecube, "Mobile Screen Time (min)", "number", mobile_screen_time)
 
     def update_pr_entry(self, record: PR):
         page_id = self._get_pr_pages_by_title(record.activity_name)[0]["id"]

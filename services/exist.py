@@ -102,19 +102,16 @@ class ExistService:
             insights_dto.append(insight_dto)
         return insights_dto
 
-    def get_yesterday_daily_note(self):
-        yesterday = Timecube.from_datetime(datetime.today() - timedelta(days=1))
-        response = self._get_attribute("mood_note", yesterday)
+    def get_daily_note(self, timecube: Timecube) -> str:
+        response = self._get_attribute("mood_note", timecube)
         return response[0].get('value')
 
-    def get_yesterday_mood(self):
-        yesterday = Timecube.from_datetime(datetime.today() - timedelta(days=1))
-        response = self._get_attribute("mood", yesterday)
+    def get_mood(self, timecube: Timecube) -> int:
+        response = self._get_attribute("mood", timecube)
         return response[0].get('value')
 
-    def get_yesterday_mobile_screen_time(self):
-        yesterday = Timecube.from_datetime(datetime.today() - timedelta(days=1))
-        response =  self._get_attribute("mobile_screen_min", yesterday)
+    def get_mobile_screen_time(self, timecube: Timecube) -> int:
+        response =  self._get_attribute("mobile_screen_min", timecube)
         return response[0].get('value')
 
     def post_yesterdays_habits(self, habits: dict):

@@ -107,15 +107,15 @@ def sync_exist_data_to_notion_and_am(exist_service: ExistService, notion_service
     """Sync Exist data to other services."""
     try:
         print("\nFetching data from Exist...")
-        mood = exist_service.get_yesterday_mood()
-        daily_note = exist_service.get_yesterday_daily_note()
-        mobile_screen_time = exist_service.get_yesterday_mobile_screen_time()
+        mood = exist_service.get_mood(yesterday)
+        daily_note = exist_service.get_daily_note(yesterday)
+        mobile_screen_time = exist_service.get_mobile_screen_time(yesterday)
         print(f"Retrieved mood: {mood}, screen time: {mobile_screen_time}")
 
         print("Updating Notion...")
-        notion_service.update_daily_note_for_yesterday(daily_note)
-        notion_service.update_mood_in_daily_tracking_and_mood_tracker(mood)
-        notion_service.update_mobile_screen_time_for_yesterday(mobile_screen_time)
+        notion_service.update_daily_note(daily_note, yesterday)
+        notion_service.update_mood_in_daily_tracking_and_mood_tracker(mood, yesterday)
+        notion_service.update_mobile_screen_time(mobile_screen_time, yesterday)
 
         print("Updating Amazing Marvin...")
         am_service.post_daily_note(yesterday, daily_note)
