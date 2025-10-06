@@ -154,9 +154,9 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
 
     def create_task_with_subtasks(self, task: Task) -> str:
         task_id = self._post_new_task(task)["id"]
-        if task.subtasks:
-            for subtask in task.subtasks:
-                task_id = self._add_subtask_to_task(subtask, task_id)["id"]
+        #if task.subtasks:
+        #    for subtask in task.subtasks:
+        #        task_id = self._add_subtask_to_task(subtask, task_id)["id"]
         return task_id
 
     def create_today_training_page(self, training_status: str, training_readiness: int,
@@ -285,9 +285,9 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
     def update_task_with_subtasks(self, task: Task) -> str:
         task_page = self._update_task(task)
         task_id = task_page["id"]
-        if task.subtasks:
-            for subtask in task.subtasks:
-                task_id = self._add_subtask_to_task(subtask, task_id)
+        #if task.subtasks:
+        #    for subtask in task.subtasks:
+        #        task_id = self._add_subtask_to_task(subtask, task_id)
         return task_id
 
     def update_training_entries_for_today(self, training_status: str, training_readiness: int,
