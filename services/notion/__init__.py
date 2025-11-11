@@ -16,15 +16,6 @@ import os
 
 class NotionManager(NotionPageSpecific, NotionTransformer):
 
-    def get_current_stepbet_games(self):
-        """
-        Pull the page ids of the current StepBet games so that the step goal
-        can be pulled into the Garmin Daily Steps database
-        :return:
-        """
-        today_timecube = Timecube.from_datetime(datetime.today())
-        return self._get_stepbet_pages_by_start_and_end_date(today_timecube, today_timecube)
-
     def get_habits_from_daily_tracking_page_by_date(self, timecube: Timecube) -> dict | str:
         habit_object = {}
         daily_tracking_page = self._get_daily_tracking_pages_by_date(timecube)[0]
@@ -111,6 +102,10 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
 
         return tasks
 
+    def get_tracker_data(self):
+        weight, bodyfat, heat_loan, credit_card, fed_student, prim_mort, sec_mort = self._get_tracker_data_most_recent()
+        return weight, bodyfat, heat_loan, credit_card, fed_student, prim_mort, sec_mort
+
     def delete_task(self, task: Task):
         return self._delete_page_by_id(task.notion_id)
 
@@ -138,7 +133,7 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
                 icon = {"type": "external", "external": {"url": activity.icon}}
                 return self._update_page_icon(activity_id, icon)
 
-            # This line should not be reached, but keeping it for safety
+            # This line should not be reached but keeping it for safety
             return does_activity_exist
 
     def create_project_page(self, project: Project):
@@ -189,10 +184,10 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
                     block_number += 2
                     insight_number += 1
                 else:
-                    block_number += 1  # Skip to next block if types don't match
+                    block_number += 1  # Skip to the next block if types don't match
             # 2a. Weekly insight: clear heading_2/heading_3 until divider
             elif insight.insight_type == "Weekly":
-                while (block_number < len(blocks) and blocks[block_number]["type"] == "heading_2"):
+                while block_number < len(blocks) and blocks[block_number]["type"] == "heading_2":
                     self._update_block_text("", blocks[block_number]["id"], "heading_2")
                     self._update_block_text("", blocks[block_number]["id"], "heading_3")
                     block_number += 2
@@ -269,13 +264,6 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
         steps_response = self._update_steps_page_with_steps(today_timecube, steps, total_distance)
         return dt_steps_response, steps_response
 
-    def update_steps_page_with_stepbet_games(self, timecube: Timecube):
-        game_ids = []
-        game_pages = self.get_current_stepbet_games()
-        for game in game_pages:
-            game_ids.append(game["id"])
-        return self._update_steps_page_with_stepbet_links(timecube, game_ids)
-
     def update_task_dependencies(self, task: Task) -> str:
         task_id = ""
         for dependency in task.depends_on:
@@ -336,7 +324,9 @@ class NotionManager(NotionPageSpecific, NotionTransformer):
 
     def update_weight_bodyfat_hrv_for_today(self, weight: int, body_fat: int, hrv: int):
         today_timecube = Timecube.from_datetime(datetime.today())
+        weight_tracker = self._post_new_weight_tracker_entry(today_timecube, weight)
+        body_fat_tracker = self._post_new_body_fat_tracker_entry(today_timecube, body_fat)
         weight_daily_response = self._update_daily_tracking_page(today_timecube, "Weight", "number", weight)
         bf_daily_response = self._update_daily_tracking_page(today_timecube, "Body Fat", "number", body_fat)
         hrv_daily_response = self._update_daily_tracking_page(today_timecube, "HRV", "number", hrv)
-        return weight_daily_response, bf_daily_response, hrv_daily_response
+        return weight_tracker, body_fat_tracker, weight_daily_response, bf_daily_response, hrv_daily_response

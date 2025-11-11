@@ -31,6 +31,8 @@ class NotionConfig:
 
         self.habit_database_id = os.getenv("NOTION_HABIT_DB_ID")
         self.mood_database_id = os.getenv("NOTION_MOOD_DB_ID")
+        self.tracker_database_id = os.getenv("NOTION_TRACKERS_DB_ID")
+        self.tracker_entry_database_id = os.getenv("NOTION_TRACKER_ENTRY_DB_ID")
 
         self.insight_block_id = os.getenv("NOTION_INSIGHT_BLOCK_ID")
 

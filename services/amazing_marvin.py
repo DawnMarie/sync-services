@@ -50,7 +50,7 @@ class AmazingMarvinService:
                 self.couch = Server(self.database_url)
                 self.db = self.couch[self.sync_database]
             except Exception as e:
-                print("Full error traceback:")
+                print("Full error traceback:", e)
                 print(traceback.format_exc())
 
                 # Specifically, check for URL encoding issues
@@ -165,22 +165,6 @@ class AmazingMarvinService:
         time.sleep(3)
         return response.json()
 
-    def _post_value_to_tracker(self, tracker_id: str, time_of_habit: Timecube, value: int) -> List:
-        print(f"Sending tracker request with payload:", tracker_id)
-        tracker_document = self.db.get(tracker_id)
-        time.sleep(3)
-        tracker_history = tracker_document['history']
-
-        tracker_history.append(time_of_habit.date_in_ms)
-        tracker_history.append(value)
-        tracker_document['history'] = tracker_history
-        tracker_document['updatedAt'] = int(time() * 1000)
-
-        print(f"Sending tracker update with payload:", tracker_document)
-        response = self.db.update([tracker_document])
-        time.sleep(3)
-        return response
-
     def _delete_any_doc(self, doc_id: str) -> dict:
         url = f"{self.api_url}doc/delete"
         print(url)
@@ -220,7 +204,7 @@ class AmazingMarvinService:
             raise Exception(projects)
         return projects[0] if projects else {}
 
-    def _get_task_by_id(self, task_id: str) -> dict:
+    def _get_task_by_id(self, task_id: str) -> dict | str:
         payload = {'_id': task_id}
         task = self._get_tasks(payload)
         if task != "No tasks returned!":
@@ -259,7 +243,7 @@ class AmazingMarvinService:
         return dto
 
     def _replace_label_ids_with_label_titles(self, labels: List[str]) -> List[str]:
-        # Populate label cache if it's empty
+        # Populate the label cache if it's empty
         if self._label_cache is None:
             url = f"{self.api_url}labels"
             print(f"Sending label request with url:", url)
@@ -391,7 +375,7 @@ class AmazingMarvinService:
         project_dto =self._convert_project_response_to_dto(project_response)
         return project_dto
 
-    def get_task_by_id(self, task_id: str) -> Task:
+    def get_task_by_id(self, task_id: str) -> Task | str:
         task_response = self._get_task_by_id(task_id)
         if task_response != "No tasks returned!":
             task_dto = self._convert_task_response_to_dto(task_response)
@@ -459,14 +443,22 @@ class AmazingMarvinService:
         return response
 
     def post_value_to_tracker_by_title(self, tracker_title: str, time_of_habit: Timecube, value: int) -> List | str:
-        tracker_selector = {'selector': {'db': 'Trackers'}}
+        tracker_selector = {'selector': {'db': 'Trackers', 'title': tracker_title}}
         print(f"Sending tracker request with payload:", tracker_selector)
-        tracker_list = self.db.find(tracker_selector)
+        try:
+            tracker = self.db.find(tracker_selector).__next__()
+            time.sleep(3)
+        except StopIteration:
+            raise StopIteration("Tracker does not exist!")
+
+        tracker_history = tracker['history']
+        tracker_history.append(time_of_habit.date_in_ms)
+        tracker_history.append(value)
+
+        tracker['updatedAt'] = int(time.time() * 1000)
+
+        print(f"Sending tracker update with payload:", tracker)
+        response = self.db.update([tracker])
         time.sleep(3)
-        tracker_id = ""
-        for tracker in tracker_list:
-            if tracker['title'] == tracker_title:
-                tracker_id = tracker['_id']
-        if tracker_id is None:
-            return "Invalid tracker title!"
-        return self._post_value_to_tracker(tracker_id, time_of_habit, value)
+        return response
+

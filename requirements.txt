@@ -1,7 +1,7 @@
 CouchDB~=1.2
 datetime~=5.5
 dotenv~=0.9.9
-garminconnect~=0.2.26
+garminconnect~=0.2.34
 google~=3.0.0
 google-api-python-client~=2.1
 notion-client~=2.2.1
@@ -11,3 +11,6 @@ pytz~=2024.1
 requests~=2.32.0
 services~=0.1.1
 tzdata~=2025.2
+
+beautifulsoup4~=4.12.3
+setuptools~=78.1.1

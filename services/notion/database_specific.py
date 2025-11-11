@@ -75,8 +75,21 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
     def _get_steps_pages_by_date(self, page_date: Timecube) -> str | List[dict]:
         return self._get_database_pages_by_date_field(self.steps_database_id, "Date", page_date)
 
-    def _get_stepbet_pages_by_start_and_end_date(self, start_date: Timecube, end_date: Timecube) -> str | List[dict]:
-        return self._get_database_pages_by_start_and_end_date_field(self.stepbet_database_id, start_date, end_date)
+    def _get_tracker_pages_by_title(self, tracker: str) -> str | List[dict]:
+        return self._get_database_pages_by_title(self.tracker_database_id, "Name", tracker)
+
+    def _get_tracker_data_most_recent(self):
+        weight = self._get_database_pages_by_title(self.tracker_database_id, "Name", "Weight")[0]["properties"]["Current Value"]["formula"]["number"]
+        bodyfat = self._get_database_pages_by_title(self.tracker_database_id, "Name", "Body Fat")[0]["properties"]["Current Value"]["formula"]["number"]
+        heat_loan = self._get_database_pages_by_title(self.tracker_database_id, "Name", "HEAT Loan")[0]["properties"]["Current Value"]["formula"]["number"]
+        credit_card = self._get_database_pages_by_title(self.tracker_database_id, "Name", "Credit Card")[0]["properties"]["Current Value"]["formula"]["number"]
+        fed_student = self._get_database_pages_by_title(self.tracker_database_id, "Name", "Federal Student Loan")[0]["properties"]["Current Value"]["formula"]["number"]
+        prim_mort = self._get_database_pages_by_title(self.tracker_database_id, "Name", "Primary Mortgage")[0]["properties"]["Current Value"]["formula"]["number"]
+        sec_mort = self._get_database_pages_by_title(self.tracker_database_id, "Name", "Secondary Mortgage")[0]["properties"]["Current Value"]["formula"]["number"]
+
+        weight = round(float(weight), 2)
+        bodyfat = round(float(bodyfat), 2)
+        return weight, bodyfat, heat_loan, credit_card, fed_student, prim_mort, sec_mort
 
     def _post_new_activity(self, activity: Activity):
         properties = self._create_activity_properties(activity)
@@ -245,6 +258,7 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
                 "number": subtask.time_estimate
             }
         }
+        print(f"Creating subtask in Notion: {subtask.title}")
         return self._post_new_database_page(self.tasks_database_id, properties)
 
     def _post_new_task(self, task: Task) -> dict:
@@ -306,7 +320,51 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
             properties["Done"] = {"checkbox": False}
         properties["Status"] = {"status": {"name": status}}
 
+        print(f"Creating task in Notion: {task}")
         return self._post_new_database_page(self.tasks_database_id, properties)
+
+    def _post_new_body_fat_tracker_entry(self, timecube: Timecube, body_fat: float) -> dict:
+        tracker_id = self._get_tracker_pages_by_title("Body Fat")[0]["id"]
+        properties = {
+            "Tracker Entry": {
+                "title": [{"text": {"content": "Body Fat Log - " + timecube.date_for_titles}}]
+            },
+            "Date": {
+                "date": {"start": timecube.date_Y_m_d}
+            },
+            "Value": {
+                "number": body_fat
+            },
+            "Unit": {
+                "rich_text": [{"text": {"content": "percent"}}]
+            },
+            "Tracker": {
+                "relation": [{"id": tracker_id}]
+            }
+        }
+        return self._post_new_database_page(self.tracker_entry_database_id, properties)
+
+    def _post_new_weight_tracker_entry(self, timecube: Timecube, weight: float) -> dict:
+        tracker_id = self._get_tracker_pages_by_title("Weight")[0]["id"]
+        properties = {
+            "Tracker Entry": {
+                "title": [{"text": {"content": "Weight Log - " + timecube.date_for_titles}}]
+            },
+            "Date": {
+                "date": {"start": timecube.date_Y_m_d}
+            },
+            "Value": {
+                "number": weight
+            },
+            "Unit": {
+                "rich_text": [{"text": {"content": "percent"}}]
+            },
+            "Tracker": {
+                "relation": [{"id": tracker_id}]
+            }
+        }
+        response = self._post_new_database_page(self.tracker_entry_database_id, properties)
+        return response
 
     def _post_new_training_page(self, timecube: Timecube, training_status: str, readiness_description: str,
                                 training_readiness: int, daily_average_stress: int):
@@ -355,19 +413,7 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
         }
         return self._update_database_page(page_id, properties)
 
-    def _update_steps_page_with_stepbet_links(self, timecube: Timecube, stepbet_links: List[str]):
-        page_id = self._get_steps_pages_by_date(timecube)[0]["id"]
-        links_payload = []
-        for item in stepbet_links:
-            links_payload.append({'id': item})
-        properties = {
-            "StepBet Link": {
-                "relation": links_payload
-            }
-        }
-        return self._update_database_page(page_id, properties)
-
-    def _update_task(self, task: Task) -> None:
+    def _update_task(self, task: Task):
         """
         Update a task in Notion.
         """
@@ -404,6 +450,7 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
                 properties = self._set_time_cycles(properties, task)
 
             # Update the task in Notion
+            print(f"Updating task in Notion: {task}")
             return self._update_database_page(task.notion_id, properties)
 
         except Exception as e:
@@ -432,12 +479,13 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
         return self._update_database_page(project_id, properties)
 
     def _add_subtask_to_task(self, subtask: Subtask, parent_id: str):
-        subtask_id = self._post_new_subtask(subtask)
+        subtask_id = self._post_new_subtask(subtask)["id"]
         properties = {
             "Sub-item": {
                 "relation": [{"id": subtask_id}]
             }
         }
+        print(f"Adding subtask {subtask.title} to task {parent_id} in Notion: ")
         return self._update_database_page(parent_id, properties)
 
     def _add_dependency_to_task(self, task_id: str, dependency_title: str):
@@ -447,6 +495,7 @@ class NotionDatabaseSpecific(NotionDatabaseFields):
                 "relation": [{"id": dependency_id}]
             }
         }
+        print(f"Adding dependency {dependency_title} to task {task_id} in Notion")
         return self._update_database_page(task_id, properties)
 
     @staticmethod

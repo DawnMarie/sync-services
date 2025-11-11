@@ -104,7 +104,7 @@ def sync_habits_to_am_and_exist(notion_service: NotionManager, am_service: Amazi
 
 def sync_exist_data_to_notion_and_am(exist_service: ExistService, notion_service: NotionManager,
                                      am_service: AmazingMarvinService, yesterday: Timecube) -> None:
-    """Sync Exist data to other services."""
+    """Syncs Exist data to other services."""
     try:
         print("\nFetching data from Exist...")
         mood = exist_service.get_mood(yesterday)
@@ -234,7 +234,6 @@ def sync_garmin_to_notion(garmin_service: GarminService, notion_service: NotionM
         print("Updating Notion...")
         notion_service.create_sleep_page(sleep_data)
         notion_service.create_steps_page(today, steps, total_distance)
-        notion_service.update_steps_page_with_stepbet_games(today)
         notion_service.create_today_training_page(training_status, readiness_score, description, stress)
         notion_service.update_weight_bodyfat_hrv_for_today(weight, body_fat, hrv)
         notion_service.update_menstrual_cycle_for_today(cycle_day)
@@ -282,6 +281,25 @@ def sync_am_to_notion_for_today(am_service: AmazingMarvinService, notion_service
         print(f"Error synchronizing Amazing Marvin to Notion: {e}")
 
 
+def sync_current_tracker_data_to_am(am_service: AmazingMarvinService, notion_service: NotionManager, today: Timecube) -> None:
+    try:
+        print("\nFetching tracker data from Notion...")
+        weight, bodyfat, heat_loan, credit_card, fed_student, prim_mort, sec_mort = notion_service.get_tracker_data()
+        print(f"Retrieved data from Notion - Weight: {weight}, Body Fat: {bodyfat}, Heat Loan: {heat_loan}, ")
+
+        # Update tracker data in Amazing Marvin
+        am_service.post_value_to_tracker_by_title("Weight", today, weight)
+        am_service.post_value_to_tracker_by_title("Body Fat Percentage", today, bodyfat)
+        am_service.post_value_to_tracker_by_title("HEAT Loan", today, heat_loan)
+        am_service.post_value_to_tracker_by_title("Credit Card", today, credit_card)
+        am_service.post_value_to_tracker_by_title("Federal Student Loans", today, fed_student)
+        am_service.post_value_to_tracker_by_title("Primary Mortgage", today, prim_mort)
+        am_service.post_value_to_tracker_by_title("Secondary Mortgage", today, sec_mort)
+        print("Successfully synced tracker data to Amazing Marvin")
+    except Exception as e:
+        print(f"\nError syncing Notion tracker data to Amazing Marvin: {str(e)}")
+
+
 def morning_sync() -> None:
     """Main function to run all morning sync tasks."""
     try:
@@ -297,13 +315,14 @@ def morning_sync() -> None:
         today, yesterday = get_today_and_yesterday()
         print(f"Syncing data for {today.date_Y_m_d}")
 
-        sync_exist_insights_to_notion(exist_service, notion_service)
-        sync_habits_to_am_and_exist(notion_service, am_service, exist_service, yesterday)
-        sync_exist_data_to_notion_and_am(exist_service, notion_service, am_service, yesterday)
-        sync_gcal_to_exist(gcal_service, exist_service, yesterday)
-        sync_garmin_to_exist(garmin_service, exist_service, yesterday, today)
-        sync_am_tasks_to_exist(am_service, exist_service, yesterday)
-        sync_garmin_to_notion(garmin_service, notion_service, today)
+        #sync_exist_insights_to_notion(exist_service, notion_service)
+        #sync_habits_to_am_and_exist(notion_service, am_service, exist_service, yesterday)
+        #sync_exist_data_to_notion_and_am(exist_service, notion_service, am_service, yesterday)
+        #sync_gcal_to_exist(gcal_service, exist_service, yesterday)
+        #sync_garmin_to_exist(garmin_service, exist_service, yesterday, today)
+        #sync_am_tasks_to_exist(am_service, exist_service, yesterday)
+        #sync_garmin_to_notion(garmin_service, notion_service, today)
+        sync_current_tracker_data_to_am(am_service, notion_service, today)
         sync_am_to_notion_for_today(am_service, notion_service, today)
 
         print("\n=== Morning sync completed successfully ===")
