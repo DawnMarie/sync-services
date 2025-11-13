@@ -70,6 +70,8 @@ jobs:
           NOTION_TASKS_DB_ID: ${{ secrets.NOTION_TASKS_DB_ID }}
           NOTION_GOAL_DB_ID: ${{ secrets.NOTION_GOAL_DB_ID }}
           NOTION_SUBCATEGORY_DB_ID: ${{ secrets.NOTION_SUBCATEGORY_DB_ID }}
+          NOTION_TRACKERS_DB_ID: ${{ secrets.NOTION_TRACKERS_DB_ID }}
+          NOTION_TRACKER_ENTRY_DB_ID: ${{ secrets.NOTION_TRACKER_ENTRY_DB_ID }}
           TZ: 'America/New_York'
         run: |
           python pipelines/early_morning.py
